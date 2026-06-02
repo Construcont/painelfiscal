@@ -519,6 +519,7 @@ function setAsgn(id,day){
     delete S.assignments[k][id];
     if(S.statuses[k])delete S.statuses[k][id];
   }
+  saveToFirebase();
 }
 function getSt(id){return(S.statuses[curKey()]||{})[id]||'Programado';}
 function setSt(id,st){const k=curKey();if(!S.statuses[k])S.statuses[k]={};S.statuses[k][id]=st;}
@@ -544,7 +545,7 @@ function doMove(id,status){
   setSt(id,status);S.modal=null;S.dragCard=null;S.dragOver=null;
   const c=DB.companies.find(x=>x.id===id);
   notify(status==='Concluído'?'✓ '+c.name.slice(0,22)+' concluído!':'Status → '+status,status==='Concluído'?'ok':'warn');
-  render();
+  saveToFirebase();render();
 }
 
 /* ── CRUD EMPRESAS ── */
@@ -567,13 +568,13 @@ function confirmAdd(){
   const err=validateComp(S.form);
   if(Object.keys(err).length){S.formErr=err;render();return;}
   const c=DB.addCompany({...S.form});
-  S.modal=null;notify('✓ '+c.name.slice(0,24)+' adicionada!','ok');render();
+  S.modal=null;notify('✓ '+c.name.slice(0,24)+' adicionada!','ok');saveToFirebase();render();
 }
 function confirmEdit(){
   const err=validateComp(S.form);
   if(Object.keys(err).length){S.formErr=err;render();return;}
   const c=DB.updateCompany(S.modal.data.id,{...S.form});
-  S.modal=null;notify('✓ '+c.name.slice(0,24)+' atualizada!','ok');render();
+  S.modal=null;notify('✓ '+c.name.slice(0,24)+' atualizada!','ok');saveToFirebase();render();
 }
 function confirmDelete(){
   const id=S.modal.data.id;
@@ -581,11 +582,11 @@ function confirmDelete(){
   DB.removeCompany(id);
   Object.values(S.assignments).forEach(m=>{delete m[id];});
   Object.values(S.statuses).forEach(m=>{delete m[id];});
-  S.modal=null;notify(c.name.slice(0,24)+' removida.','warn');render();
+  S.modal=null;notify(c.name.slice(0,24)+' removida.','warn');saveToFirebase();render();
 }
 function changeResp(id,resp){
   const c=DB.changeResp(id,resp);
-  notify(c.name.slice(0,18)+'→ '+resp.split(' ')[0],'info');render();
+  notify(c.name.slice(0,18)+'→ '+resp.split(' ')[0],'info');saveToFirebase();render();
 }
 
 /* ── CRUD COLABORADORES ── */
@@ -610,7 +611,7 @@ function confirmAddColab(){
   const err=validateColab(S.form);
   if(Object.keys(err).length){S.formErr=err;render();return;}
   const c=DB.addColab({...S.form});
-  S.modal=null;notify('✓ '+c.nome+' adicionado(a)!','ok');render();
+  S.modal=null;notify('✓ '+c.nome+' adicionado(a)!','ok');saveToFirebase();render();
 }
 function confirmEditColab(){
   const err=validateColab(S.form);
@@ -621,13 +622,13 @@ function confirmEditColab(){
   if(oldNome&&oldNome!==c.nome){
     DB.companies.filter(x=>x.resp===oldNome).forEach(x=>x.resp=c.nome);
   }
-  S.modal=null;notify('✓ '+c.nome+' atualizado(a)!','ok');render();
+  S.modal=null;notify('✓ '+c.nome+' atualizado(a)!','ok');saveToFirebase();render();
 }
 function confirmDeleteColab(){
   const id=S.modal.data.id;
   const c=DB.colaboradores.find(x=>x.id===id);
   DB.removeColab(id);
-  S.modal=null;notify(c.nome+' removido(a). Empresas reatribuídas.','warn');render();
+  S.modal=null;notify(c.nome+' removido(a). Empresas reatribuídas.','warn');saveToFirebase();render();
 }
 
 /* ── FILTER/SORT ── */
@@ -1312,7 +1313,62 @@ window.cpend=()=>{
   doMove(S.modal.data.id,'Pendência');
 };
 
-render();
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE — Sincronização em Tempo Real
+// Passos para configurar:
+//   1. Acesse https://console.firebase.google.com
+//   2. Crie um projeto (ex: "painelfiscal")
+//   3. Clique em "Realtime Database" → "Criar banco de dados" → modo teste
+//   4. Clique em ⚙️ Configurações do projeto → "Seus apps" → Web (</>)
+//   5. Copie os valores do firebaseConfig e cole abaixo
+// ═══════════════════════════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey:            "AIzaSyD2nRoo7wQETLXoMwxOdba_x06mnATRh0I",
+  authDomain:        "painel-gestao-fiscal.firebaseapp.com",
+  databaseURL:       "https://painel-gestao-fiscal-default-rtdb.firebaseio.com",
+  projectId:         "painel-gestao-fiscal",
+  storageBucket:     "painel-gestao-fiscal.firebasestorage.app",
+  messagingSenderId: "23441122909",
+  appId:             "1:23441122909:web:815a8918cfd467e77b0fb4"
+};
+
+function saveToFirebase(){
+  if(!window._fbRoot)return;
+  const co={};DB.companies.forEach(x=>{co[x.id]=x;});
+  const cl={};DB.colaboradores.forEach(x=>{cl[x.id]=x;});
+  window._fbRoot.set({
+    companies:co,
+    colaboradores:cl,
+    assignments:S.assignments,
+    statuses:S.statuses
+  });
+}
+
+(function initFirebase(){
+  try{
+    firebase.initializeApp(FB_CONFIG);
+    const fbDB=firebase.database();
+    window._fbRoot=fbDB.ref('painelfiscal');
+    document.getElementById('root').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0D1117;color:#58A6FF;font-size:14px;gap:10px;flex-direction:column"><div style="font-size:28px">⏳</div><div>Conectando ao banco de dados...</div></div>';
+    window._fbRoot.on('value',function(snap){
+      const data=snap.val();
+      if(data){
+        if(data.companies)DB.companies=Object.values(data.companies).filter(Boolean);
+        if(data.colaboradores)DB.colaboradores=Object.values(data.colaboradores).filter(Boolean);
+        S.assignments=data.assignments||{};
+        S.statuses=data.statuses||{};
+      } else {
+        // Primeiro acesso: sobe os dados iniciais para o Firebase
+        saveToFirebase();
+      }
+      render();
+    });
+  }catch(e){
+    console.warn('Firebase não configurado — rodando offline:',e.message);
+    saveToFirebase=function(){};
+    render();
+  }
+})();
 </script>
 </body>
 </html>
