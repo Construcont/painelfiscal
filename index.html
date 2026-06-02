@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FiscalOPS — Painel Fiscal</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1117;--s1:#161B22;--s2:#21262D;--s3:#30363D;
+  --tx:#E6EDF3;--mu:#8B949E;--ac:#58A6FF;
+  --go:#3B82F6;--ops:#9333EA;--g3:#EF4444;--sc:#D4AF37;
+  --done:#10B981;--pend:#EF4444;--prog:#6B7280;--and_:#3B82F6;
+}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px}
+.hdr{background:var(--s1);border-bottom:1px solid var(--s3);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:700;color:var(--ac);letter-spacing:-.5px}
+.logo em{color:var(--mu);font-style:normal;font-weight:400}
+.sw{position:relative;flex:1;min-width:140px;max-width:200px}
+.sw input{width:100%;background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:5px 8px 5px 26px;color:var(--tx);font-size:12px;outline:none}
+.sw input:focus{border-color:var(--ac)}
+.sw::before{content:"🔍";position:absolute;left:7px;top:50%;transform:translateY(-50%);font-size:11px}
+select{background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:5px 8px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;max-width:120px}
+input[type=text],input[type=email]{background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:6px 9px;color:var(--tx);font-size:12px;outline:none}
+input:focus,select:focus{border-color:var(--ac)}
+.btn{background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:5px 11px;color:var(--tx);font-size:11px;cursor:pointer;white-space:nowrap;transition:.15s}
+.btn:hover{background:var(--s3)}
+.btn-primary{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-danger{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:#F87171}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+.btn-warn{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:#FCD34D}
+.btn-warn:hover{background:rgba(245,158,11,.22)}
+.mnav{display:flex;align-items:center;gap:5px;margin-left:auto}
+.mnav button{background:var(--s2);border:1px solid var(--s3);border-radius:5px;width:24px;height:24px;color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.mlbl{font-size:12px;font-weight:600;min-width:108px;text-align:center}
+.tabs{background:var(--s1);border-bottom:1px solid var(--s3);padding:0 16px;display:flex;overflow-x:auto;gap:0}
+.tabs::-webkit-scrollbar{height:0}
+.tab{padding:9px 13px;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.1s;flex-shrink:0}
+.tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+.tab:hover:not(.on){color:var(--tx)}
+.badge{background:var(--ac);color:#fff;font-size:8px;padding:1px 5px;border-radius:8px;margin-left:4px;vertical-align:middle}
+/* KPI */
+.krow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 16px}
+.kpi{background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:10px 12px}
+.kl{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kv{font-size:22px;font-weight:700;line-height:1}
+.ks{font-size:10px;color:var(--mu);margin-top:3px}
+/* OVERVIEW */
+.ov{padding:12px 16px}
+.rg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.rc{background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:14px;position:relative;overflow:hidden}
+.rc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
+.rl::before{background:#10B981}.rm::before{background:#8B5CF6}.rma::before{background:var(--ac)}.rv::before{background:#F59E0B}
+.rn{font-size:12px;font-weight:700;margin-bottom:4px}
+.rcargo{font-size:9px;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.cargo-tag{background:var(--s2);border:1px solid var(--s3);border-radius:3px;padding:1px 5px;font-size:9px}
+.rt{font-size:26px;font-weight:700;color:var(--ac)}
+.rs{font-size:10px;color:var(--mu);margin-top:2px}
+.rtags{display:flex;gap:4px;flex-wrap:wrap;margin-top:9px}
+.rtag{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:500}
+.tgo{background:rgba(59,130,246,.2);color:#60A5FA}.tops{background:rgba(147,51,234,.2);color:#C084FC}
+.tg3{background:rgba(239,68,68,.2);color:#F87171}.tsc{background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.2)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cc{background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:13px}
+.ch{font-size:10px;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bl{font-size:10px;color:var(--mu);width:82px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt{flex:1;background:var(--s2);border-radius:3px;height:8px;overflow:hidden}
+.bf{height:100%;border-radius:3px;transition:.6s}
+.bv{font-size:10px;font-weight:700;min-width:22px;text-align:right}
+/* TABLE */
+.tw{padding:0 16px 16px}
+.tf{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+.to{border:1px solid var(--s3);border-radius:8px;overflow:hidden}
+.ts{max-height:440px;overflow-y:auto}
+.ts::-webkit-scrollbar{width:4px}
+.ts::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+table{width:100%;border-collapse:collapse;min-width:680px}
+th{background:var(--s2);font-size:10px;font-weight:600;color:var(--mu);text-align:left;padding:7px 10px;position:sticky;top:0;z-index:5;border-bottom:1px solid var(--s3);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--tx)}
+th.ns{cursor:default}th.ns:hover{color:var(--mu)}
+td{padding:6px 10px;border-bottom:1px solid var(--s2);vertical-align:middle}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.cn2{font-size:12px;font-weight:500;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnpj{font-size:10px;color:var(--mu);font-family:"SF Mono",Consolas,monospace}
+.gb,.rb,.sb{font-size:9px;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.gb{font-weight:600}
+.bgo{background:rgba(59,130,246,.2);color:#60A5FA}.bops{background:rgba(147,51,234,.2);color:#C084FC}
+.bg3{background:rgba(239,68,68,.2);color:#F87171}.bsc{background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.25)}
+.bsn{background:rgba(16,185,129,.15);color:#34D399}.blr{background:rgba(99,102,241,.15);color:#818CF8}
+.blp{background:rgba(245,158,11,.15);color:#FCD34D}.bmei{background:rgba(236,72,153,.15);color:#F9A8D4}.bis{background:rgba(107,114,128,.15);color:var(--mu)}
+.bnilr{background:rgba(107,114,128,.1);color:var(--mu)}
+.sb.sp{background:rgba(107,114,128,.2);color:var(--mu)}.sb.sa{background:rgba(59,130,246,.2);color:#60A5FA}
+.sb.spe{background:rgba(239,68,68,.2);color:#F87171}.sb.sd{background:rgba(16,185,129,.2);color:#34D399}
+.ds{background:var(--s2);border:1px solid var(--s3);border-radius:5px;padding:3px 6px;color:var(--tx);font-size:10px;outline:none;max-width:98px}
+.ds:focus{border-color:var(--ac)}.ds.ok{border-color:var(--go);color:var(--go)}
+.resp-sel{background:transparent;border:1px solid transparent;border-radius:5px;padding:2px 5px;color:var(--tx);font-size:11px;outline:none;cursor:pointer;max-width:110px;transition:.15s}
+.resp-sel:hover{border-color:var(--s3);background:var(--s2)}
+.resp-sel:focus{border-color:var(--ac);background:var(--s2)}
+.resp-sel.mar{color:var(--ac);font-weight:600}
+/* GESTÃO */
+.gw{padding:12px 16px 16px}
+.gtabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--s3);padding-bottom:0}
+.gtab{padding:7px 12px;font-size:11px;font-weight:500;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.1s}
+.gtab.on{color:var(--ac);border-bottom-color:var(--ac)}
+.gtab:hover:not(.on){color:var(--tx)}
+/* PRODUTIVIDADE */
+.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.prod-card{background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:13px;position:relative;overflow:hidden}
+.prod-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px}
+.pc-l::before{background:#10B981}.pc-m::before{background:#8B5CF6}.pc-mar::before{background:var(--ac)}.pc-v::before{background:#F59E0B}
+.pc-name{font-size:11px;font-weight:700;margin-bottom:2px}
+.pc-cargo{font-size:9px;color:var(--mu);margin-bottom:10px}
+.pc-sla{font-size:28px;font-weight:700;line-height:1;margin-bottom:2px}
+.pc-sla-lbl{font-size:9px;color:var(--mu)}
+.pc-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px}
+.pc-stat{background:var(--s2);border-radius:5px;padding:5px 7px;text-align:center}
+.pc-stat-v{font-size:14px;font-weight:700}
+.pc-stat-l{font-size:8px;color:var(--mu);margin-top:1px}
+.pc-bar-wrap{margin-top:10px}
+.pc-bar-lbl{font-size:9px;color:var(--mu);display:flex;justify-content:space-between;margin-bottom:3px}
+.pc-bar-track{background:var(--s2);border-radius:4px;height:6px;overflow:hidden}
+.pc-bar-fill{height:100%;border-radius:4px;transition:.6s}
+/* Ranking */
+.rank-table{width:100%;margin-bottom:12px}
+.rank-row{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--s3);border-radius:7px;padding:10px 13px;margin-bottom:6px}
+.rank-pos{font-size:16px;font-weight:800;width:24px;text-align:center;flex-shrink:0}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-size:12px;font-weight:600}
+.rank-cargo{font-size:9px;color:var(--mu);margin-top:1px}
+.rank-bars{flex:2}
+.rank-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.rank-bar-lbl{font-size:9px;color:var(--mu);width:65px;white-space:nowrap}
+.rank-bar-t{flex:1;background:var(--s2);border-radius:3px;height:7px;overflow:hidden}
+.rank-bar-f{height:100%;border-radius:3px;transition:.6s}
+.rank-nums{display:flex;gap:8px;flex-shrink:0}
+.rank-num{text-align:center}
+.rank-num-v{font-size:12px;font-weight:700}
+.rank-num-l{font-size:8px;color:var(--mu)}
+.rank-medal{font-size:18px;margin-left:4px;flex-shrink:0}
+/* Histórico mensal */
+.hist-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
+.hist-cell{background:var(--s1);border:1px solid var(--s3);border-radius:6px;padding:8px;text-align:center}
+.hist-month{font-size:9px;color:var(--mu);margin-bottom:5px}
+.hist-sla{font-size:16px;font-weight:700}
+.hist-bar{margin-top:4px;height:32px;display:flex;flex-direction:column;justify-content:flex-end}
+.hist-fill{border-radius:2px 2px 0 0;transition:.6s;min-height:2px}
+/* COLABORADORES */
+.colabs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.colab-card{background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:14px;position:relative}
+.colab-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:8px 8px 0 0}
+.colab-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;margin-bottom:10px}
+.colab-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.colab-cargo{font-size:10px;color:var(--mu);margin-bottom:8px}
+.colab-stats{display:flex;gap:6px;font-size:9px;flex-wrap:wrap}
+.colab-stat{background:var(--s2);border-radius:3px;padding:2px 7px;color:var(--mu)}
+.colab-actions{display:flex;gap:5px;margin-top:10px}
+.add-colab-card{background:var(--s1);border:1px dashed var(--s3);border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:140px;transition:.15s;color:var(--mu)}
+.add-colab-card:hover{border-color:var(--ac);color:var(--ac);background:rgba(88,166,255,.04)}
+.add-colab-icon{font-size:24px;margin-bottom:6px}
+.add-colab-lbl{font-size:11px;font-weight:500}
+/* CAL */
+.cw{padding:0 16px 16px}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dh{text-align:center;font-size:9px;font-weight:600;color:var(--mu);padding:4px 0;text-transform:uppercase}
+.dc{background:var(--s1);border:1px solid var(--s3);border-radius:6px;padding:5px;min-height:65px;cursor:pointer;transition:.1s;overflow:hidden}
+.dc:hover{border-color:var(--ac)}.dc.sel{border-color:var(--ac);background:rgba(88,166,255,.1)}
+.dc.tod{border-color:var(--go)}.dc.emp{background:transparent;border-color:transparent;cursor:default}.dc.we{opacity:.55;cursor:default;background:var(--s2)}
+.dn{font-size:10px;font-weight:700;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center}
+.dch{display:flex;flex-wrap:wrap;gap:1px;margin-bottom:2px}
+.chip{font-size:8px;padding:1px 3px;border-radius:2px;font-weight:700}
+.cgo2{background:rgba(59,130,246,.3);color:#93C5FD}.cops2{background:rgba(147,51,234,.3);color:#D8B4FE}
+.cg32{background:rgba(239,68,68,.3);color:#FCA5A5}.csc2{background:rgba(212,175,55,.25);color:#D4AF37}
+.dsb{display:flex;gap:1px;height:3px;border-radius:2px;overflow:hidden;margin-top:2px}
+.dd{background:var(--done)}.da{background:var(--and_)}.dp{background:var(--pend)}.dr{background:var(--prog)}
+/* KB */
+.kbw{padding:0 16px 16px}
+.kbh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kbt{font-size:14px;font-weight:700}
+.kbdate{background:var(--ac);color:#fff;font-size:11px;padding:3px 10px;border-radius:5px;margin-left:8px}
+.kbc{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kboard{background:var(--s1);border:1px solid var(--s3);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.kbhd{padding:8px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--s3)}
+.kp .kbhd{border-top:2px solid var(--prog)}.ka .kbhd{border-top:2px solid var(--and_)}
+.kpnd .kbhd{border-top:2px solid var(--pend)}.kd .kbhd{border-top:2px solid var(--done)}
+.kcnt{background:var(--s2);border-radius:8px;padding:1px 6px;font-size:9px;color:var(--mu)}
+.kby{padding:6px;flex:1;min-height:180px;max-height:320px;overflow-y:auto;transition:.1s}
+.kby.dov{background:rgba(88,166,255,.08);border-radius:4px}
+.kby::-webkit-scrollbar{width:3px}.kby::-webkit-scrollbar-thumb{background:var(--s3)}
+.card{background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:8px;margin-bottom:6px;cursor:grab;position:relative;overflow:hidden;transition:.1s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+.cgo::before{background:var(--go)}.cops::before{background:var(--ops)}.cg3::before{background:var(--g3)}.csc::before{background:var(--sc)}
+.card:hover{border-color:var(--ac);transform:translateY(-1px)}
+.card.cpe{border-color:rgba(239,68,68,.4)}.card.cdo{border-color:rgba(16,185,129,.4)}.card.iscsc{border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.04)}
+.cname{font-size:11px;font-weight:600;margin-left:6px;margin-bottom:5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cmeta{display:flex;gap:4px;margin-left:6px;flex-wrap:wrap;align-items:center}
+.scstar{position:absolute;top:4px;right:5px;font-size:8px;background:var(--sc);color:#1a1a1a;padding:1px 4px;border-radius:2px;font-weight:700}
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--s1);border:1px solid var(--s3);border-radius:10px;padding:20px;width:400px;max-width:95vw}
+.modal.wide{width:520px}
+.modal h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.modal-sub{font-size:11px;color:var(--mu);margin-bottom:14px;border-bottom:1px solid var(--s3);padding-bottom:10px}
+.mf{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.mf label{font-size:10px;color:var(--mu);font-weight:500}
+.mf input,.mf select,.mf textarea{background:var(--s2);border:1px solid var(--s3);border-radius:6px;padding:7px 9px;color:var(--tx);font-size:12px;outline:none;width:100%;font-family:inherit}
+.mf input:focus,.mf select:focus{border-color:var(--ac)}
+.mf input.err{border-color:var(--pend)}
+.mf .errtxt{font-size:9px;color:var(--pend);margin-top:2px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mbtns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.mbtns button{padding:7px 16px;border-radius:6px;font-size:12px;cursor:pointer;border:none;font-weight:500}
+.mc{background:var(--s2);color:var(--tx)}.mok{background:var(--ac);color:#fff}.mdel{background:var(--pend);color:#fff}
+/* NOTIF */
+.notif{position:fixed;top:68px;right:16px;border-radius:8px;padding:10px 14px;font-size:12px;z-index:400;max-width:260px;background:var(--s1);border:1px solid;animation:slin .25s}
+.notif.ok{border-color:var(--done);color:var(--done)}.notif.warn{border-color:var(--pend);color:var(--pend)}.notif.info{border-color:var(--ac);color:var(--ac)}
+@keyframes slin{from{transform:translateX(16px);opacity:0}to{transform:translateX(0);opacity:1}}
+.confirm-box{background:var(--s1);border:1px solid rgba(239,68,68,.4);border-radius:10px;padding:20px;width:340px;max-width:95vw}
+.confirm-box h3{font-size:14px;font-weight:600;margin-bottom:8px;color:var(--pend)}
+.confirm-box p{font-size:12px;color:var(--mu);margin-bottom:16px;line-height:1.5}
+.lt{--bg:#F6F8FA;--s1:#fff;--s2:#F6F8FA;--s3:#D0D7DE;--tx:#1F2328;--mu:#656D76}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const INIT_DATA=[[1,'04.798.677/0011-40','DIAFER - FILIA 11','G3','LR','Luciana Goya'],
+[2,'04.798.677/0010-69','DIAFER - FILIAL 10','G3','LR','Luciana Goya'],
+[3,'04.798.677/0002-59','DIAFER - FILIAL 2','G3','LR','Luciana Goya'],
+[4,'04.798.677/0003-30','DIAFER - FILIAL 3','G3','LR','Luciana Goya'],
+[5,'04.798.677/0004-10','DIAFER - FILIAL 4','G3','LR','Luciana Goya'],
+[6,'04.798.677/0005-00','DIAFER - FILIAL 5','G3','LR','Luciana Goya'],
+[7,'04.798.677/0006-82','DIAFER - FILIAL 6','G3','LR','Luciana Goya'],
+[8,'04.798.677/0007-63','DIAFER - FILIAL 7','G3','LR','Luciana Goya'],
+[9,'04.798.677/0009-25','DIAFER - FILIAL 9','G3','LR','Luciana Goya'],
+[10,'04.798.677/0001-78','DIAFER - MATRIZ','G3','LR','Luciana Goya'],
+[11,'12.657.467/0002-79','DIALOC - FILIAL 2','G3','LP','Luciana Goya'],
+[12,'12.657.467/0003-50','DIALOC - FILIAL 3','G3','LR','Luciana Goya'],
+[13,'12.657.467/0004-30','DIALOC - FILIAL 4','G3','LP','Luciana Goya'],
+[14,'12.657.467/0005-11','DIALOC - FILIAL 5','G3','LP','Luciana Goya'],
+[15,'12.657.467/0006-00','DIALOC - FILIAL 6','G3','LP','Luciana Goya'],
+[16,'12.657.467/0001-98','DIALOC MATRIZ','G3','LP','Luciana Goya'],
+[17,'13.190.257/0001-03','EM2 ADMINISTRACAO E PARTICIPACOES LTDA','G3','LP','Luciana Goya'],
+[18,'65.343.182/0001-49','DACOSTA ECOMMERCE LTDA','OPS','SN','Luciana Goya'],
+[19,'20.140.037/0001-22','M & M INDUSTRIA E COMERCIO LTDA','OPS','SN','Luciana Goya'],
+[20,'07.537.139/0001-18','MAC FRIO DISTRIBUIDORA LTDA','OPS','LR','Luciana Goya'],
+[21,'62.602.927/0001-59','MAC ELETRO ECOMMERCE LTDA','G3','SN','Luciana Goya'],
+[22,'20.140.037/0002-03','M & M INDUSTRIA E COMERCIO LTDA FILIAL','G3','SN','Luciana Goya'],
+[23,'18.731.176/0001-89','18.731.176 LUANA RODRIGUES DA SILVA','GO','SN','Matheus Soares'],
+[24,'30.782.736/0001-20','30.782.736 DIANA SOARES DA SILVA','GO','SN','Matheus Soares'],
+[25,'51.498.662/0001-74','51.498.662 MARIA JOSE SOARES DE','GO','SN','Matheus Soares'],
+[26,'60.560.019/0001-14','60.560.019 PAULO CESAR MARTINS','GO','SN','Matheus Soares'],
+[27,'65.928.745/0001-60','65.928.745 GUSTAVO XIMENES','GO','MEI','Matheus Soares'],
+[28,'35.682.278/0001-70','A. RUBINATTO FILHO IT SOLUTIONS','GO','SN','Matheus Soares'],
+[29,'18.302.798/0001-91','ADRIANA DE SOUZA LOPES','GO','SN','Matheus Soares'],
+[30,'48.465.808/0001-70','AI DYNAMICS LTDA','GO','SN','Matheus Soares'],
+[31,'08.636.087/0001-08','ALAIDE DOS SANTOS','GO','SN','Matheus Soares'],
+[32,'34.669.074/0001-37','ALAN VITOR ROCHA','GO','SN','Matheus Soares'],
+[33,'30.572.268/0001-69','ALEX TADEU FISIOTERAPIA LTDA','GO','SN','Matheus Soares'],
+[34,'41.083.505/0001-44','ALEXANDRA MARTINEZ DEL RIO 23973481873','GO','MEI','Matheus Soares'],
+[35,'41.190.269/0001-65','AMERICA LATINA REPRESENTACAO','GO','SN','Matheus Soares'],
+[36,'59.903.507/0001-06','ARTEMIS GROWTH LTDA','GO','SN','Matheus Soares'],
+[37,'65.646.459/0001-02','CLINICA CULTIVA SAUDE MENTAL LTDA','GO','SN','Matheus Soares'],
+[38,'26.857.583/0001-65','CONSTRUCONT SOLUCOES CONTABEIS E','GO','SN','Matheus Soares'],
+[39,'26.857.583/0002-46','CONSTRUCONT SOLUCOES CONTABEIS E EMPRESARIAIS LTDA','GO','SN','Matheus Soares'],
+[40,'62.475.869/0001-40','CONSTRUFLY CLUB LTDA','GO','SN','Matheus Soares'],
+[41,'60.951.392/0001-04','COSSERMELLI DESIGN','GO','SN','Matheus Soares'],
+[42,'62.170.395/0001-28','CUMINO CONSULT ASSESSORIA EMPRESARIAL LTDA','GO','SN','Matheus Soares'],
+[43,'43.116.324/0001-00','DELTA ELETRONICA LTDA','GO','SN','Matheus Soares'],
+[44,'52.638.224/0001-27','DIMAROH  LTDA','GO','SN','Matheus Soares'],
+[45,'52.134.479/0001-52','DM COMIDA ORIENTAL LTDA','GO','SN','Matheus Soares'],
+[46,'58.066.040/0001-16','ECOSPHERE SOLUCOES ADMINISTRATIVAS E SUSTENTAVEIS LT','GO','SN','Matheus Soares'],
+[47,'34.730.844/0001-00','EUDES DE ANDRADE FERRAZ','GO','MEI','Matheus Soares'],
+[48,'59.300.130/0001-92','FLYWAY SERVICOS MECANICOS LTDA','GO','SN','Matheus Soares'],
+[49,'60.146.860/0001-60','FRACAROLI SERVICOS ESTRATEGICOS LTDA','GO','SN','Matheus Soares'],
+[50,'58.078.785/0001-03','GD TAGLIAFERRO REPRESENTACAO COMERCIAL E SERVICOS LT','GO','SN','Matheus Soares'],
+[51,'58.458.606/0001-55','GELKAZ CONSULTORIA EMPRESARIAL LTDA','GO','SN','Matheus Soares'],
+[52,'25.146.023/0001-30','HAMILTON DE OLIVEIRA SANTOS 11027840876','GO','SN','Matheus Soares'],
+[53,'36.746.137/0001-37','HELOISA SALOMONI CARDOSO','GO','MEI','Matheus Soares'],
+[54,'30.291.834/0001-64','ISF INSPECOES E SERVICOS','GO','SN','Matheus Soares'],
+[55,'18.139.721/0001-42','IVANI DOMINGUES DA SILVA','GO','SN','Matheus Soares'],
+[56,'59.753.377/0001-64','JF BMF LTDA','GO','SN','Matheus Soares'],
+[57,'33.850.757/0001-23','JULIO CESAR PAZ JUNIOR','GO','SN','Matheus Soares'],
+[58,'51.150.106/0001-02','KIKO CONSTRUCOES LTDA','GO','SN','Matheus Soares'],
+[59,'62.389.048/0001-90','MARIANA AMARAL BOTEZINI LTDA','GO','SN','Matheus Soares'],
+[60,'26.314.506/0001-69','PATRICIA CUNHA TAGLIAFERRO','GO','SN','Matheus Soares'],
+[61,'34.582.260/0001-34','PAULA DE LIMA','GO','MEI','Matheus Soares'],
+[62,'54.287.133/0001-10','PEROTI ODONTOLOGIA INFANTIL LTDA','GO','SN','Matheus Soares'],
+[63,'38.904.717/0001-30','PIOVEZAN ENFERMAGEM ESPECIALIZADA','GO','SN','Matheus Soares'],
+[64,'64.414.240/0001-15','PLENA ROUPAS E ACESSORIOS LTDA','GO','SN','Matheus Soares'],
+[65,'43.710.809/0001-10','RONALDO CARVALHO & CLOVIS - ADV','GO','SN','Matheus Soares'],
+[66,'27.617.399/0001-00','SEVVENUP EVENTOS LTDA','GO','SN','Matheus Soares'],
+[67,'56.000.941/0001-80','TEM GUINCHOS LTDA','GO','SN','Matheus Soares'],
+[68,'54.860.835/0001-40','URBAN7IMOB IMOBILIARIA LTDA','GO','SN','Matheus Soares'],
+[69,'46.797.325/0001-48','VITORIA GABRIELE AMARO BARROS','GO','SN','Matheus Soares'],
+[70,'46.943.044/0001-56','VOLTAX RECUPERACAO TRIBUTARIA LT','GO','SN','Matheus Soares'],
+[71,'10.634.899/0001-58','WALTER HENRIQUE JUNIOR SOROCABA','GO','MEI','Matheus Soares'],
+[72,'24.443.134/0001-45','ARLS ANDRE LUIZ','OPS','IS','Matheus Soares'],
+[73,'30.804.225/0001-61','ARLS AUGUSTA  JUSTICA E LIBERDADE','OPS','IS','Matheus Soares'],
+[74,'51.546.560/0001-87','CRISTIANE APARECIDA ALBINO NUNES','OPS','SN','Matheus Soares'],
+[75,'25.302.954/0001-80','DONA MARIA REFEIÇÕES LTDA','OPS','SN','Matheus Soares'],
+[76,'47.168.601/0001-71','FJH SERVICOS E EVENTOS LTDA','OPS','SN','Matheus Soares'],
+[77,'71.870.562/0001-34','GABINETE DE LEITURA','OPS','IS','Matheus Soares'],
+[78,'26.075.759/0001-27','GALPAO DESIGN LTDA.','OPS','SN','Matheus Soares'],
+[79,'22.729.434/0001-60','JET SUL LTDA','OPS','SN','Matheus Soares'],
+[80,'57.906.079/0001-31','LOUISE SHOP COMERCIO LTDA','OPS','SN','Matheus Soares'],
+[81,'67.439.711/0002-19','MANDURI LUBRIFICANTES - FILIAL','OPS','SN','Matheus Soares'],
+[82,'67.439.711/0001-38','MANDURI LUBRIFICANTES - MATRIZ','OPS','SN','Matheus Soares'],
+[83,'23.549.399/0001-60','MEDIANEIRA VIDROS','OPS','SN','Matheus Soares'],
+[84,'28.528.667/0001-80','MONTALTO COMEX LTDA','OPS','SN','Matheus Soares'],
+[85,'48.684.722/0001-39','SANTA CREMA BRUNCH','OPS','SN','Matheus Soares'],
+[86,'21.933.562/0001-68','SANTA CREMA CAFE','OPS','SN','Matheus Soares'],
+[87,'67.361.360/0001-90','SINDICATO EMPR POSTOS','OPS','IS','Matheus Soares'],
+[88,'50.000.592/0001-10','THULY PANIFICADORA','OPS','SN','Matheus Soares'],
+[89,'47.950.857/0001-36','TP ROUPAS E ACESSORIOS LTDA','OPS','SN','Matheus Soares'],
+[90,'40.960.038/0001-20','TREVO SERRALHERIA LTDA','OPS','SN','Matheus Soares'],
+[91,'65.979.867/0001-86','A C DO VALLE SA LOGISTICA LTDA','SC','SN','Matheus Soares'],
+[92,'65.879.370/0001-96','ACESARBG LTDA','SC','SN','Matheus Soares'],
+[93,'65.906.056/0001-55','AG LTDA','SC','SN','Matheus Soares'],
+[94,'65.866.883/0001-62','BSA MOTORSPORT LTDA','SC','SN','Matheus Soares'],
+[95,'65.811.677/0001-55','CMM COMUNICACAO VISUAL LTDA','SC','SN','Matheus Soares'],
+[96,'65.971.978/0001-46','COWBOY MECANICO GERAL LTDA','SC','SN','Matheus Soares'],
+[97,'65.844.154/0001-05','DARJAN VIRISSIMO PINTO LTDA','SC','SN','Matheus Soares'],
+[98,'65.868.814/0001-98','DTL SOLUCOES EM MOTORSPORT LTDA','SC','SN','Matheus Soares'],
+[99,'65.903.750/0001-19','EDUARDO DOS SANTOS SA LTDA','SC','SN','Matheus Soares'],
+[100,'65.754.791/0001-90','JOSE CARLOS DE SOUSA AMORIM LTDA','SC','SN','Matheus Soares'],
+[101,'65.845.807/0001-70','LAMINACAO E PREPARACAO FIBRA DE VIDRO LTDA','SC','SN','Matheus Soares'],
+[102,'65.903.399/0001-66','LOOM ELETRONICS MOTORSPORT LTDA','SC','SN','Matheus Soares'],
+[103,'65.868.603/0001-55','MARLON RACE LTDA','SC','SN','Matheus Soares'],
+[104,'65.812.411/0001-27','MAYER MECANICA EM GERAL LTDA','SC','SN','Matheus Soares'],
+[105,'65.906.252/0001-20','MECANICA NARDIS LTDA','SC','SN','Matheus Soares'],
+[106,'65.922.043/0001-70','PC RACING LTDA','SC','SN','Matheus Soares'],
+[107,'41.589.903/0001-37','AGASSI E PIRES LTDA','G3','SN','Mariane'],
+[108,'62.609.753/0001-56','CASA SERENA HOME DECOR LTDA','G3','SN','Mariane'],
+[109,'23.935.120/0001-86','FAST ESTAMPAS E BRINDES LTDA','G3','SN','Mariane'],
+[110,'23.792.395/0001-08','REHDER ARQUITETURA E INTERIORES LTDA','G3','SN','Mariane'],
+[111,'52.458.489/0001-43','REHDER CONSTRUCOES LTDA','G3','SN','Mariane'],
+[112,'45.574.273/0001-88','A.S APOIO ADMINISTRATIVO E FINANCEIRO','GO','SN','Mariane'],
+[113,'63.419.639/0001-26','ALYNN SUPLEMENTS LTDA','GO','SN','Mariane'],
+[114,'40.235.019/0001-31','KL PISCINAS LIMPEZA E MANUTENCAO LTDA','GO','SN','Mariane'],
+[115,'59.971.342/0001-00','KNZ SERVICOS ADMINISTRATIVOS LTDA','GO','SN','Mariane'],
+[116,'39.786.890/0001-44','LB SPORTS LTDA','GO','SN','Mariane'],
+[117,'33.428.099/0001-86','M2 SOROCABA REPRESENTACOES LTDA','GO','SN','Mariane'],
+[118,'42.685.583/0001-81','MFERNANDES LTDA','GO','SN','Mariane'],
+[119,'54.278.595/0001-70','OSEAN COMERCIO, IMPORTAÇÃO E EXPORTAÇÃO LTDA','GO','SN','Mariane'],
+[120,'64.309.850/0001-59','PADOVANI GESTAO ESTRATÉGICA E OPERACOES LTDA','GO','SN','Mariane'],
+[121,'61.325.830/0001-83','PIRES SOLUCOES EMPRESARIAIS LTDA','GO','SN','Mariane'],
+[122,'58.999.727/0001-04','READY FIRE MANUTENCAO CONTRA INCENDIO LTDA','GO','SN','Mariane'],
+[123,'44.206.677/0001-56','SOLUTEC MONTAGEM DE CLIMATIZACAO E MANUTENCAO EM AVI','GO','SN','Mariane'],
+[124,'02.048.715/0001-40','TWS ENGENHARIA LTDA','GO','SN','Mariane'],
+[125,'61.283.026/0001-89','VENTORQ DO BRASIL LTDA','GO','SN','Mariane'],
+[126,'64.364.728/0001-85','W. SAMPAIO SERVIÇOS ADMINISTRATIVOS','GO','SN','Mariane'],
+[127,'65.628.123/0001-17','WHITE ROOSTER SERVICES LTDA','GO','SN','Mariane'],
+[128,'43.259.022/0001-83','ABSOLUTION GESTAO CONDOMINIAL LTDA','OPS','SN','Mariane'],
+[129,'33.809.446/0001-10','ARG SALVADOS E VARIEDADES DISTRIBUIDORA LTDA','OPS','SN','Mariane'],
+[130,'04.151.598/0001-70','BOB CENTER','OPS','SN','Mariane'],
+[131,'57.028.615/0001-43','CHANQUINI LTDA.','OPS','LP','Mariane'],
+[132,'52.961.880/0001-66','GRANDES UTILIDADES','OPS','SN','Mariane'],
+[133,'51.692.007/0001-52','L&F PINHEIRO','OPS','SN','Mariane'],
+[134,'33.078.257/0001-15','NP PARAFUSOS E FERRAMENTAS LTDA','OPS','SN','Mariane'],
+[135,'22.412.190/0001-97','PAPELARIA AQUARELA','OPS','SN','Mariane'],
+[136,'52.387.850/0001-98','THAE MATERIAIS E COMERCIO','OPS','SN','Mariane'],
+[137,'45.879.289/0001-07','WEKE E-COMMERCE E CONSULTORIA LT','OPS','SN','Mariane'],
+[138,'14.469.216/0001-05','FABRICIO VIANA D. R. LARA PRODUCAO AUDIO VISUAL','OPS','SN','Mariane'],
+[139,'46.139.476/0001-09','P.PARLOG PARAFUSOS','OPS','LP','Mariane'],
+[140,'31.774.228/0001-62','PARLOG PARAFUSOS','OPS','SN','Mariane'],
+[141,'51.846.084/0001-10','PREMOLTECH LTDA','OPS','SN','Mariane'],
+[142,'48.332.696/0001-80','PREMOLTEX LTDA','OPS','SN','Mariane'],
+[143,'24.965.078/0001-09','PREMOSTEEL LTDA','OPS','SN','Mariane'],
+[144,'28.634.367/0001-86','SYG COMERCIO ELETRONICO LTDA','OPS','SN','Mariane'],
+[145,'45.435.297/0001-56','ELS COMERCIO ELETRONICO LTDA','OPS','SN','Mariane'],
+[146,'11.984.950/0001-14','AUTO ELETRICA ADVANCE LTDA','OPS','SN','Mariane'],
+[147,'36.375.023/0001-28','AGUIA BRANCA COMERCIO DE PECAS LTDA','OPS','SN','Mariane'],
+[148,'45.702.227/0001-17','AGUIA TRUCK COMERCIO DE PECAS LTDA','OPS','SN','Mariane'],
+[149,'18.163.369/0001-80','FAST PATCH SOLUCOES EM ARTES LTDA','G3','LP','Mariane'],
+[150,'49.781.259/0001-06','ARG OUTLET LTDA','OPS','SN','Mariane'],
+[151,'15.399.791/0001-41','FABRI GARCIA LTDA','OPS','LP','Mariane'],
+[152,'20.597.120/0001-25','BAIALUNA ON-LINE LTDA','G3','LR','Mariane'],
+[153,'26.087.513/0001-75','UNICAA HOME CENTER LTDA','G3','SN','Mariane'],
+[154,'61.914.516/0001-36','UNICAA HOME CENTER OUTLET LTDA','G3','SN','Mariane'],
+[155,'43.452.494/0001-58','MEGA ARTS SALAO DE CABELEIREIROS E VENDA DE PRODUTOS','OPS','SN','Mariane'],
+[156,'34.668.153/0001-23','NATTOS AUTOMOTIVA LTDA','OPS','LP','Mariane'],
+[157,'50.274.295/0001-62','HARAS SANTOS & NARDOTTO','OPS','LP','Mariane'],
+[158,'43.493.314/0001-86','JJ EQUIPAMENTOS','OPS','SN','Mariane'],
+[159,'17.325.769/0001-82','ACR AUDITORIA LTDA','OPS','LP','Mariane'],
+[160,'16.615.878/0001-71','DISK PIZZA DONA NIVALDA','OPS','SN','Mariane'],
+[161,'52.697.989/0001-38','LOUREIRO COMERCIO DE PECAS AUTOMOTIVAS LTDA','G3','LP','Mariane'],
+[162,'19.965.616/0001-25','CELSO AFFONSO INVESTIMENTOS','G3','LP','Mariane'],
+[163,'47.733.254/0001-82','3F COMERCIO  - ATACA TUDO','G3','LR','Vitória Furtado'],
+[164,'42.564.366/0002-14','ACRETEC DISTRIBUIDORA 002','G3','LR','Vitória Furtado'],
+[165,'42.564.366/0003-03','ACRETEC DISTRIBUIDORA 003','G3','LR','Vitória Furtado'],
+[166,'42.564.366/0004-86','ACRETEC DISTRIBUIDORA 004','G3','LR','Vitória Furtado'],
+[167,'42.564.366/0005-67','ACRETEC DISTRIBUIDORA 005','G3','LR','Vitória Furtado'],
+[168,'42.564.366/0001-33','ACRETEC DISTRIBUIDORA LTDA','G3','LR','Vitória Furtado'],
+[169,'22.706.366/0001-13','AIR EXPRESS GASES MEDICINAIS','G3','LP','Vitória Furtado'],
+[170,'49.469.721/0001-34','BETAHOME COMERCIO DE ELETRONICOS E UTILIDADES LTDA','G3','LR','Vitória Furtado'],
+[171,'67.629.832/0001-42','DEPOSITO CENTRAL','G3','LR','Vitória Furtado'],
+[172,'67.629.832/0003-04','DEPOSITO CENTRAL CASA & CONSTRUCAO LTDA','G3','LR','Vitória Furtado'],
+[173,'47.449.892/0001-76','DOMG DISTRIBUIDORA','G3','SN','Vitória Furtado'],
+[174,'49.255.029/0001-03','ELETRICA INDEPENDENCIA LTDA','G3','LR','Vitória Furtado'],
+[175,'36.177.282/0001-44','EQUICAMPO LTDA','G3','SN','Vitória Furtado'],
+[176,'61.909.170/0001-88','GP TERCEIRIZACOES E SERVICOS LTDA','G3','SN','Vitória Furtado'],
+[177,'44.763.255/0001-81','INTEGRA GESTAO DE PESSOAS LTDA','G3','SN','Vitória Furtado'],
+[178,'45.252.026/0001-65','ITAPEVA COMERCIO DE PARAFUSOS','G3','SN','Vitória Furtado'],
+[179,'75.967.711/0001-39','KUSMA COMERCIO','G3','LP','Vitória Furtado'],
+[180,'75.967.711/0003-09','KUSMA COMERCIO - FILIAL 03','G3','LP','Vitória Furtado'],
+[181,'12.504.682/0001-59','RS SISTEMAS CONTRA INCENDIO LTDA','G3','LP','Vitória Furtado'],
+[182,'45.706.217/0001-50','T4E GROUP TECNOLOGIA LTDA','G3','SN','Vitória Furtado'],
+[183,'03.133.842/0001-00','TECNOTRONICS','G3','LR','Vitória Furtado'],
+[184,'03.133.842/0002-90','TECNOTRONICS FILIAL 2','G3','LR','Vitória Furtado'],
+[185,'03.133.842/0003-71','TECNOTRONICS FILIAL 3','G3','LR','Vitória Furtado'],
+[186,'23.538.503/0006-25','VMAXXY TINTAS FILIAL 006','G3','LR','Vitória Furtado'],
+[187,'23.538.503/0005-44','VMAXXYTINTAS FILIAL 005','G3','LR','Vitória Furtado'],
+[188,'23.538.503/0002-00','VMAXXYTINTAS FILIAL 02','G3','LR','Vitória Furtado'],
+[189,'23.538.503/0003-82','VMAXXYTINTAS FILIAL 03','G3','LR','Vitória Furtado'],
+[190,'23.538.503/0004-63','VMAXXYTINTAS FILIAL 04','G3','LR','Vitória Furtado'],
+[191,'23.538.503/0001-10','VMAXXYTINTAS LTDA','G3','LR','Vitória Furtado'],
+[192,'51.927.303/0001-95','NPI EMPREENDIMENTOS LTDA','GO','LP','Vitória Furtado'],
+[193,'52.158.638/0001-59','MAXPC ECOMMERCE LTDA','OPS','LR','Vitória Furtado'],
+[194,'52.158.638/0002-30','MAXPC ECOMMERCE LTDA FILIAL','OPS','LR','Vitória Furtado'],
+[195,'02.532.510/0001-35','PADARIA MARIA CRISTINA LTDA','OPS','SN','Vitória Furtado'],
+[196,'23.485.263/0002-14','RACING PARTS COMERCIO - FILIAL 2','OPS','LP','Vitória Furtado'],
+[197,'23.485.263/0003-03','RACING PARTS COMERCIO - FILIAL 3','OPS','LP','Vitória Furtado'],
+[198,'23.485.263/0001-33','RACING PARTS COMERCIO - MATRIZ','OPS','LP','Vitória Furtado'],
+[199,'58.531.686/0001-27','STEINERT COMERCIO E SOLUCOES CORPORATIVAS LTDA','OPS','SN','Vitória Furtado'],
+[200,'23.878.612/0001-87','STEINERT COMERCIO, REFRIGERACAO E VENTILACAO LTDA','OPS','SN','Vitória Furtado'],
+[201,'63.787.650/0001-49','STY ENGENHARIA DE PROJETOS E MONTAGENS INDUSTRIAIS L','OPS','SN','Vitória Furtado'],
+[202,'33.947.747/0001-00','WMI ENGENHARIA DE PROJETOS E MONTAGENS INDUSTRIAIS L','OPS','LP','Vitória Furtado']];
+const TRANSFERRED_NAMES=new Set(["A.S APOIO ADMINISTRATIVO E FINANCEIRO", "ALYNN SUPLEMENTS LTDA", "KL PISCINAS LIMPEZA E MANUTENCAO LTDA", "KNZ SERVICOS ADMINISTRATIVOS LTDA", "LB SPORTS LTDA", "M2 SOROCABA REPRESENTACOES LTDA", "MFERNANDES LTDA", "OSEAN COMERCIO, IMPORTAÇÃO E EXPORTAÇÃO LTDA", "PADOVANI GESTAO ESTRATÉGICA E OPERACOES LTDA", "PIRES SOLUCOES EMPRESARIAIS LTDA", "READY FIRE MANUTENCAO CONTRA INCENDIO LTDA", "SOLUTEC MONTAGEM DE CLIMATIZACAO E MANUTENCAO EM AVIARIOS LTDA", "TWS ENGENHARIA LTDA", "VENTORQ DO BRASIL LTDA", "W. SAMPAIO SERVIÇOS ADMINISTRATIVOS", "WHITE ROOSTER SERVICES LTDA", "ARG SALVADOS E VARIEDADES DISTRIBUIDORA LTDA", "GRANDES UTILIDADES", "L&F PINHEIRO", "NP PARAFUSOS E FERRAMENTAS LTDA", "THAE MATERIAIS E COMERCIO"]);
+
+const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const CARGOS=['Gerente','Analista Fiscal','Assistente Fiscal'];
+const GROUPS={GO:'Growth-On',OPS:'OPS',G3:'Growth 360',SC:'SCUDERIA BANDEIRAS'};
+const REGIMES={SN:'Simples Nacional',LR:'Lucro Real',LP:'Lucro Presumido',MEI:'MEI',IS:'Isenta',NI:'NI'};
+const GRP_OPTS=['GO','OPS','G3','SC'];
+const REG_OPTS=['SN','LR','LP','MEI','IS','NI'];
+const COLAB_COLORS=['#10B981','#8B5CF6','#58A6FF','#F59E0B','#EC4899','#06B6D4','#84CC16','#F97316'];
+const COLAB_CLS=['pc-l','pc-m','pc-mar','pc-v','pc-l','pc-m','pc-mar','pc-v'];
+const TODAY={y:2026,m:6,d:1};
+
+function daysInMonth(y,m){return new Date(y,m,0).getDate();}
+function firstDow(y,m){return new Date(y,m-1,1).getDay();}
+function isWE(y,m,d){const w=new Date(y,m-1,d).getDay();return w===0||w===6;}
+function getDow(y,m,d){return new Date(y,m-1,d).getDay();}
+function mKey(y,m){return y+'-'+String(m).padStart(2,'0');}
+function nextId(){return Math.max(0,...DB.companies.map(c=>c.id))+1;}
+function nextColabId(){return Math.max(0,...DB.colaboradores.map(c=>c.id))+1;}
+
+/* ── DB ── */
+const DB = {
+  colaboradores: [
+    {id:1,nome:'Luciana Goya',cargo:'Analista Fiscal',cor:'#10B981',ativo:true},
+    {id:2,nome:'Matheus Soares',cargo:'Analista Fiscal',cor:'#8B5CF6',ativo:true},
+    {id:3,nome:'Mariane',cargo:'Assistente Fiscal',cor:'#58A6FF',ativo:true},
+    {id:4,nome:'Vitória Furtado',cargo:'Analista Fiscal',cor:'#F59E0B',ativo:true},
+  ],
+  companies: INIT_DATA.map(([id,cnpj,name,grp,reg,resp])=>({id,cnpj,name,grp,reg,resp,ativo:true})),
+  getResps(){return this.colaboradores.filter(c=>c.ativo).map(c=>c.nome);},
+  addColab(c){const nc={...c,id:nextColabId(),ativo:true};this.colaboradores.push(nc);return nc;},
+  updateColab(id,fields){const i=this.colaboradores.findIndex(x=>x.id===id);if(i>=0)Object.assign(this.colaboradores[i],fields);return this.colaboradores[i];},
+  removeColab(id){
+    // Reassign companies before removing
+    const colab=this.colaboradores.find(x=>x.id===id);
+    if(colab){
+      const fallback=this.colaboradores.find(x=>x.id!==id&&x.ativo);
+      if(fallback)this.companies.filter(c=>c.resp===colab.nome).forEach(c=>c.resp=fallback.nome);
+    }
+    const i=this.colaboradores.findIndex(x=>x.id===id);if(i>=0)this.colaboradores.splice(i,1);
+  },
+  addCompany(c){const nc={...c,id:nextId(),ativo:true};this.companies.push(nc);return nc;},
+  updateCompany(id,fields){const i=this.companies.findIndex(x=>x.id===id);if(i>=0)Object.assign(this.companies[i],fields);return this.companies[i];},
+  removeCompany(id){const i=this.companies.findIndex(x=>x.id===id);if(i>=0)this.companies.splice(i,1);},
+  changeResp(id,resp){return this.updateCompany(id,{resp});},
+};
+
+const TRANSFERRED_IDS=new Set(DB.companies.filter(c=>c.resp==='Mariane'&&TRANSFERRED_NAMES.has(c.name)).map(c=>c.id));
+
+/* Produtividade simulada por mês */
+function getProdData(resp,y,m){
+  const k=mKey(y,m);
+  const companies=DB.companies.filter(c=>c.resp===resp&&c.ativo);
+  const total=companies.length;
+  const asgn=S.assignments[k]||{};
+  const sts=S.statuses[k]||{};
+  const agendados=companies.filter(c=>asgn[c.id]).length;
+  const concluidos=companies.filter(c=>sts[c.id]==='Concluído').length;
+  const pendencias=companies.filter(c=>sts[c.id]==='Pendência').length;
+  const andamento=companies.filter(c=>sts[c.id]==='Em Andamento').length;
+  const sla=agendados>0?Math.round(concluidos/agendados*100):0;
+  return{total,agendados,concluidos,pendencias,andamento,sla};
+}
+
+/* ── STATE ── */
+const S={
+  dark:true,tab:'overview',gtab:'produtividade',
+  vm:{y:2026,m:6},selDay:1,
+  assignments:{},statuses:{},
+  modal:null,
+  dragCard:null,dragOver:null,
+  notif:null,notifTimer:null,
+  sort:{col:'name',dir:1},
+  filter:{search:'',resp:'',grp:'',reg:'',nodate:false},
+  form:{},formErr:{},
+};
+
+function curKey(){return mKey(S.vm.y,S.vm.m);}
+function getAsgn(id){return(S.assignments[curKey()]||{})[id]||null;}
+function setAsgn(id,day){
+  const k=curKey();
+  if(!S.assignments[k])S.assignments[k]={};
+  if(day){
+    S.assignments[k][id]=day;
+    if(!S.statuses[k])S.statuses[k]={};
+    if(!S.statuses[k][id])S.statuses[k][id]='Programado';
+  } else {
+    delete S.assignments[k][id];
+    if(S.statuses[k])delete S.statuses[k][id];
+  }
+}
+function getSt(id){return(S.statuses[curKey()]||{})[id]||'Programado';}
+function setSt(id,st){const k=curKey();if(!S.statuses[k])S.statuses[k]={};S.statuses[k][id]=st;}
+function dayComps(day){const a=S.assignments[curKey()]||{};return DB.companies.filter(c=>c.ativo&&a[c.id]===day);}
+
+function notify(msg,type='info'){
+  clearTimeout(S.notifTimer);S.notif={msg,type};render();
+  S.notifTimer=setTimeout(()=>{S.notif=null;render();},3000);
+}
+function move(id,status){
+  if(getSt(id)===status)return;
+  if(status==='Pendência'){S.modal={type:'pend',data:{id}};render();return;}
+  doMove(id,status);
+}
+function doMove(id,status){
+  setSt(id,status);S.modal=null;S.dragCard=null;S.dragOver=null;
+  const c=DB.companies.find(x=>x.id===id);
+  notify(status==='Concluído'?'✓ '+c.name.slice(0,22)+' concluído!':'Status → '+status,status==='Concluído'?'ok':'warn');
+  render();
+}
+
+/* ── CRUD EMPRESAS ── */
+function validateComp(f){
+  const err={};
+  if(!f.cnpj||f.cnpj.trim().length<14)err.cnpj='CNPJ inválido';
+  if(!f.name||f.name.trim().length<2)err.name='Nome obrigatório';
+  if(!f.resp)err.resp='Responsável obrigatório';
+  return err;
+}
+function openAdd(){S.modal={type:'add'};S.form={cnpj:'',name:'',grp:'GO',reg:'SN',resp:DB.getResps()[0]||''};S.formErr={};render();}
+function openEdit(id){
+  const c=DB.companies.find(x=>x.id===id);
+  S.modal={type:'edit',data:{id}};
+  S.form={cnpj:c.cnpj,name:c.name,grp:c.grp,reg:c.reg,resp:c.resp};
+  S.formErr={};render();
+}
+function openDelete(id){S.modal={type:'delete',data:{id}};render();}
+function confirmAdd(){
+  const err=validateComp(S.form);
+  if(Object.keys(err).length){S.formErr=err;render();return;}
+  const c=DB.addCompany({...S.form});
+  S.modal=null;notify('✓ '+c.name.slice(0,24)+' adicionada!','ok');render();
+}
+function confirmEdit(){
+  const err=validateComp(S.form);
+  if(Object.keys(err).length){S.formErr=err;render();return;}
+  const c=DB.updateCompany(S.modal.data.id,{...S.form});
+  S.modal=null;notify('✓ '+c.name.slice(0,24)+' atualizada!','ok');render();
+}
+function confirmDelete(){
+  const id=S.modal.data.id;
+  const c=DB.companies.find(x=>x.id===id);
+  DB.removeCompany(id);
+  Object.values(S.assignments).forEach(m=>{delete m[id];});
+  Object.values(S.statuses).forEach(m=>{delete m[id];});
+  S.modal=null;notify(c.name.slice(0,24)+' removida.','warn');render();
+}
+function changeResp(id,resp){
+  const c=DB.changeResp(id,resp);
+  notify(c.name.slice(0,18)+'→ '+resp.split(' ')[0],'info');render();
+}
+
+/* ── CRUD COLABORADORES ── */
+function openAddColab(){
+  S.modal={type:'addColab'};
+  S.form={nome:'',cargo:'Assistente Fiscal',cor:COLAB_COLORS[DB.colaboradores.length%COLAB_COLORS.length]};
+  S.formErr={};render();
+}
+function openEditColab(id){
+  const c=DB.colaboradores.find(x=>x.id===id);
+  S.modal={type:'editColab',data:{id}};
+  S.form={nome:c.nome,cargo:c.cargo,cor:c.cor};
+  S.formErr={};render();
+}
+function openDeleteColab(id){S.modal={type:'deleteColab',data:{id}};render();}
+function validateColab(f){
+  const err={};
+  if(!f.nome||f.nome.trim().length<2)err.nome='Nome obrigatório (mín. 2 caracteres)';
+  return err;
+}
+function confirmAddColab(){
+  const err=validateColab(S.form);
+  if(Object.keys(err).length){S.formErr=err;render();return;}
+  const c=DB.addColab({...S.form});
+  S.modal=null;notify('✓ '+c.nome+' adicionado(a)!','ok');render();
+}
+function confirmEditColab(){
+  const err=validateColab(S.form);
+  if(Object.keys(err).length){S.formErr=err;render();return;}
+  const oldNome=DB.colaboradores.find(x=>x.id===S.modal.data.id)?.nome;
+  const c=DB.updateColab(S.modal.data.id,{...S.form});
+  // Atualizar responsável nas empresas se nome mudou
+  if(oldNome&&oldNome!==c.nome){
+    DB.companies.filter(x=>x.resp===oldNome).forEach(x=>x.resp=c.nome);
+  }
+  S.modal=null;notify('✓ '+c.nome+' atualizado(a)!','ok');render();
+}
+function confirmDeleteColab(){
+  const id=S.modal.data.id;
+  const c=DB.colaboradores.find(x=>x.id===id);
+  DB.removeColab(id);
+  S.modal=null;notify(c.nome+' removido(a). Empresas reatribuídas.','warn');render();
+}
+
+/* ── FILTER/SORT ── */
+function filtered(){
+  const{search,resp,grp,reg,nodate}=S.filter;
+  return DB.companies.filter(c=>{
+    if(!c.ativo)return false;
+    if(resp&&c.resp!==resp)return false;
+    if(grp&&c.grp!==grp)return false;
+    if(reg&&c.reg!==reg)return false;
+    if(search){const q=search.toLowerCase();if(!c.name.toLowerCase().includes(q)&&!c.cnpj.includes(q))return false;}
+    if(nodate&&getAsgn(c.id))return false;
+    return true;
+  }).sort((a,b)=>{
+    const col=S.sort.col;
+    let av=col==='resp'?a.resp:col==='grp'?a.grp:col==='date'?(getAsgn(a.id)||999):a.name;
+    let bv=col==='resp'?b.resp:col==='grp'?b.grp:col==='date'?(getAsgn(b.id)||999):b.name;
+    return av<bv?-S.sort.dir:av>bv?S.sort.dir:0;
+  });
+}
+function toggleSort(col){if(S.sort.col===col)S.sort.dir*=-1;else{S.sort.col=col;S.sort.dir=1;}render();}
+
+/* ── BADGE HELPERS ── */
+function gbcls(g){return{GO:'bgo',OPS:'bops',G3:'bg3',SC:'bsc'}[g]||'bgo';}
+function rbcls(r){return{SN:'bsn',LR:'blr',LP:'blp',MEI:'bmei',IS:'bis'}[r]||'bnilr';}
+function stcls(s){return{'Concluído':'sd','Em Andamento':'sa','Pendência':'spe',Programado:'sp'}[s]||'sp';}
+function gcardcls(g){return{GO:'cgo',OPS:'cops',G3:'cg3',SC:'csc'}[g]||'cgo';}
+function getColabColor(nome){const c=DB.colaboradores.find(x=>x.nome===nome);return c?.cor||'var(--ac)';}
+
+function renderDateSel(id){
+  const{y,m}=S.vm;const dim=daysInMonth(y,m);const cur=getAsgn(id);
+  let opts='<option value="">— sem data —</option>';
+  for(let d=1;d<=dim;d++){
+    const we=isWE(y,m,d);const dow=getDow(y,m,d);
+    opts+=`<option value="${d}"${we?' disabled':''}${cur===d?' selected':''}>${String(d).padStart(2,'0')} ${DAYS[dow]}${we?' ✕':''}</option>`;
+  }
+  return`<select class="ds${cur?' ok':''}" onchange="doAsgn(${id},this.value)">${opts}</select>`;
+}
+function renderRespSel(c){
+  const resps=DB.getResps();
+  const col=getColabColor(c.resp);
+  let opts=resps.map(r=>`<option value="${r}"${c.resp===r?' selected':''}>${r.split(' ')[0]}</option>`).join('');
+  return`<select class="resp-sel" style="color:${col};font-weight:600" onchange="changeResp(${c.id},this.value)">${opts}</select>`;
+}
+
+/* ════════════ RENDER ════════════ */
+
+function renderKPI(){
+  const k=curKey();const a=S.assignments[k]||{};const st=S.statuses[k]||{};
+  const total=Object.keys(a).length;
+  const done=Object.values(st).filter(x=>x==='Concluído').length;
+  const pend=Object.values(st).filter(x=>x==='Pendência').length;
+  const pct=total?Math.round(done/total*100):0;
+  const active=DB.companies.filter(c=>c.ativo).length;
+  return`<div class="krow">
+    <div class="kpi"><div class="kl">Total Clientes</div><div class="kv" style="color:var(--ac)">${active}</div><div class="ks">base ativa</div></div>
+    <div class="kpi"><div class="kl">Colaboradores</div><div class="kv" style="color:var(--sc)">${DB.colaboradores.filter(c=>c.ativo).length}</div><div class="ks">departamento fiscal</div></div>
+    <div class="kpi"><div class="kl">Agendados</div><div class="kv" style="color:var(--go)">${total}</div><div class="ks">${MONTHS[S.vm.m-1]} ${S.vm.y}</div></div>
+    <div class="kpi"><div class="kl">Concluídos</div><div class="kv" style="color:var(--done)">${done}</div><div class="ks">${pct}% SLA</div></div>
+    <div class="kpi"><div class="kl">Pendências</div><div class="kv" style="color:var(--pend)">${pend}</div><div class="ks">atenção</div></div>
+  </div>`;
+}
+
+function renderOverview(){
+  const active=DB.companies.filter(c=>c.ativo);
+  const resps=DB.colaboradores.filter(c=>c.ativo);
+  const gcls={GO:'tgo',OPS:'tops',G3:'tg3',SC:'tsc'};
+  const gd=Object.entries(GROUPS).map(([k,l])=>[l,{GO:'var(--go)',OPS:'var(--ops)',G3:'var(--g3)',SC:'var(--sc)'}[k],active.filter(c=>c.grp===k).length]);
+  const rd=[['Simples Nac.','#10B981',active.filter(c=>c.reg==='SN').length],['Lucro Real','#6366F1',active.filter(c=>c.reg==='LR').length],['Lucro Pres.','#F59E0B',active.filter(c=>c.reg==='LP').length],['MEI','#EC4899',active.filter(c=>c.reg==='MEI').length],['Isenta','#6B7280',active.filter(c=>c.reg==='IS').length]];
+  const mx1=Math.max(1,...gd.map(x=>x[2]));const mx2=Math.max(1,...rd.map(x=>x[2]));
+  return`<div class="ov">
+    <div class="rg" style="grid-template-columns:repeat(${resps.length},1fr)">
+      ${resps.map((r,i)=>{
+        const cs=active.filter(c=>c.resp===r.nome);
+        const tags=Object.entries(GROUPS).map(([k])=>({l:k,v:cs.filter(c=>c.grp===k).length})).filter(t=>t.v>0);
+        const pccls=COLAB_CLS[i%COLAB_CLS.length];
+        return`<div class="rc ${pccls}" style="--rc-color:${r.cor}">
+          <div class="rn">${r.nome.split(' ')[0]}</div>
+          <div class="rcargo"><span class="cargo-tag">${r.cargo}</span></div>
+          <div class="rt">${cs.length}</div>
+          <div class="rs">${r.nome}</div>
+          <div class="rtags">${tags.map(t=>`<span class="rtag ${gcls[t.l]||'tgo'}">${t.v} ${t.l}</span>`).join('')}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="charts">
+      <div class="cc"><div class="ch">Por Grupo</div>
+        ${gd.map(([l,c,n])=>`<div class="br"><div class="bl">${l==='SCUDERIA BANDEIRAS'?'Scuderia':l}</div><div class="bt"><div class="bf" style="width:${n/mx1*100}%;background:${c}"></div></div><div class="bv" style="color:${c}">${n}</div></div>`).join('')}
+      </div>
+      <div class="cc"><div class="ch">Por Regime</div>
+        ${rd.map(([l,c,n])=>`<div class="br"><div class="bl">${l}</div><div class="bt"><div class="bf" style="width:${n/mx2*100}%;background:${c}"></div></div><div class="bv" style="color:${c}">${n}</div></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderClients(){
+  const comps=filtered();
+  const{search,resp,grp,reg,nodate}=S.filter;
+  const si=x=>S.sort.col===x?(S.sort.dir>0?' ↑':' ↓'):'';
+  const resps=DB.getResps();
+  return`<div class="tw">
+    <div class="tf">
+      <div class="sw" style="max-width:180px"><input type="text" placeholder="Buscar empresa ou CNPJ..." value="${search}" oninput="setFil('search',this.value)"></div>
+      <select onchange="setFil('resp',this.value)"><option value="">Responsáveis</option>
+        ${resps.map(r=>`<option value="${r}"${resp===r?' selected':''}>${r.split(' ')[0]}</option>`).join('')}</select>
+      <select onchange="setFil('grp',this.value)"><option value="">Grupos</option>
+        ${Object.entries(GROUPS).map(([k,v])=>`<option value="${k}"${grp===k?' selected':''}>${k==='SC'?'Scuderia':v}</option>`).join('')}</select>
+      <select onchange="setFil('reg',this.value)"><option value="">Regimes</option>
+        ${Object.entries(REGIMES).map(([k,v])=>`<option value="${k}"${reg===k?' selected':''}>${v}</option>`).join('')}</select>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;white-space:nowrap">
+        <input type="checkbox" ${nodate?'checked':''} onchange="setFil('nodate',this.checked)"> Sem data
+      </label>
+      <span style="margin-left:auto;font-size:10px;color:var(--mu)">${comps.length} empresa${comps.length!==1?'s':''}</span>
+      <button class="btn btn-primary" onclick="openAdd()" style="font-size:11px">+ Nova Empresa</button>
+    </div>
+    <div class="to"><div class="ts"><table>
+      <thead><tr>
+        <th onclick="toggleSort('name')" style="width:185px">Empresa${si('name')}</th>
+        <th style="width:125px">CNPJ</th>
+        <th onclick="toggleSort('grp')" style="width:68px">Grupo${si('grp')}</th>
+        <th style="width:78px">Regime</th>
+        <th onclick="toggleSort('resp')" style="width:115px">Responsável${si('resp')} <span style="font-size:8px;color:var(--ac)">✎</span></th>
+        <th onclick="toggleSort('date')" style="width:100px">Data${si('date')}</th>
+        <th style="width:70px">Status</th>
+        <th class="ns" style="width:74px;text-align:center">Ações</th>
+      </tr></thead>
+      <tbody>
+        ${comps.length===0?'<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--mu)">Nenhuma empresa encontrada</td></tr>':''}
+        ${comps.map(c=>{
+          const isTr=TRANSFERRED_IDS.has(c.id);const asgn=getAsgn(c.id);
+          const st=asgn?getSt(c.id):null;const isSC=c.grp==='SC';
+          return`<tr>
+            <td><div class="cn2" title="${c.name}">${isSC?'★ ':''}<strong>${c.name}</strong>${isTr?'<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ac);margin-left:5px;vertical-align:middle"></span>':''}</div></td>
+            <td><span class="cnpj">${c.cnpj}</span></td>
+            <td><span class="gb ${gbcls(c.grp)}">${c.grp==='SC'?'SCUD':c.grp}</span></td>
+            <td><span class="rb ${rbcls(c.reg)}">${c.reg}</span></td>
+            <td>${renderRespSel(c)}</td>
+            <td>${renderDateSel(c.id)}</td>
+            <td>${asgn?`<span class="sb ${stcls(st)}">${st}</span>`:'<span style="color:var(--mu);font-size:10px">—</span>'}</td>
+            <td style="text-align:center">
+              <button class="btn" style="font-size:10px;padding:3px 7px;margin-right:3px" onclick="openEdit(${c.id})">✎</button>
+              <button class="btn btn-danger" style="font-size:10px;padding:3px 7px" onclick="openDelete(${c.id})">✕</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div></div>
+  </div>`;
+}
+
+/* ── GESTÃO ── */
+function renderGestao(){
+  return`<div class="gw">
+    <div class="gtabs">
+      <div class="gtab${S.gtab==='produtividade'?' on':''}" onclick="S.gtab='produtividade';render()">📊 Produtividade</div>
+      <div class="gtab${S.gtab==='empresas'?' on':''}" onclick="S.gtab='empresas';render()">🏢 Gestão de Empresas</div>
+      <div class="gtab${S.gtab==='colaboradores'?' on':''}" onclick="S.gtab='colaboradores';render()">👤 Colaboradores</div>
+    </div>
+    ${S.gtab==='produtividade'?renderProdutividade():''}
+    ${S.gtab==='empresas'?renderEmpresasCrud():''}
+    ${S.gtab==='colaboradores'?renderColaboradores():''}
+  </div>`;
+}
+
+function renderProdutividade(){
+  const{y,m}=S.vm;const colabs=DB.colaboradores.filter(c=>c.ativo);
+  const prodData=colabs.map(c=>({...c,...getProdData(c.nome,y,m)}));
+  const sorted=[...prodData].sort((a,b)=>b.sla-a.sla||(b.concluidos-a.concluidos));
+  const medals=['🥇','🥈','🥉'];
+
+  // Histórico simulado (últimos 6 meses)
+  const histMeses=[];
+  for(let i=5;i>=0;i--){let nm=m-i;let ny=y;while(nm<1){nm+=12;ny--;}histMeses.push({y:ny,m:nm,lbl:MONTHS[nm-1].slice(0,3)});}
+
+  const maxTotal=Math.max(1,...prodData.map(x=>x.total));
+
+  return`
+  <!-- Cards individuais -->
+  <div class="prod-grid" style="grid-template-columns:repeat(${colabs.length},1fr)">
+    ${prodData.map((p,i)=>{
+      const pccls=COLAB_CLS[i%COLAB_CLS.length];
+      const slaColor=p.sla>=80?'var(--done)':p.sla>=50?'#F59E0B':'var(--pend)';
+      return`<div class="prod-card ${pccls}">
+        <div class="pc-name">${p.nome.split(' ')[0]}</div>
+        <div class="pc-cargo">${p.cargo}</div>
+        <div class="pc-sla" style="color:${slaColor}">${p.sla}<span style="font-size:14px;color:var(--mu)">%</span></div>
+        <div class="pc-sla-lbl">SLA — ${MONTHS[m-1]}</div>
+        <div class="pc-stats">
+          <div class="pc-stat"><div class="pc-stat-v" style="color:var(--ac)">${p.total}</div><div class="pc-stat-l">Clientes</div></div>
+          <div class="pc-stat"><div class="pc-stat-v" style="color:var(--go)">${p.agendados}</div><div class="pc-stat-l">Agendados</div></div>
+          <div class="pc-stat"><div class="pc-stat-v" style="color:var(--done)">${p.concluidos}</div><div class="pc-stat-l">Concluídos</div></div>
+          <div class="pc-stat"><div class="pc-stat-v" style="color:var(--pend)">${p.pendencias}</div><div class="pc-stat-l">Pendências</div></div>
+        </div>
+        <div class="pc-bar-wrap">
+          <div class="pc-bar-lbl"><span>Progresso da carteira</span><span>${p.agendados}/${p.total}</span></div>
+          <div class="pc-bar-track"><div class="pc-bar-fill" style="width:${p.total>0?p.agendados/p.total*100:0}%;background:${p.cor||'var(--ac)'}"></div></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- Ranking -->
+  <div style="background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:14px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;margin-bottom:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">🏆 Ranking de Produtividade — ${MONTHS[m-1]} ${y}</div>
+    ${sorted.map((p,i)=>{
+      const slaColor=p.sla>=80?'var(--done)':p.sla>=50?'#F59E0B':'var(--pend)';
+      const maxConc=Math.max(1,...sorted.map(x=>x.concluidos));
+      const maxPend=Math.max(1,...sorted.map(x=>x.pendencias));
+      return`<div class="rank-row">
+        <div class="rank-pos" style="color:${i===0?'#D4AF37':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--mu)'}">${i<3?medals[i]:i+1}</div>
+        <div class="rank-info">
+          <div class="rank-name">${p.nome}</div>
+          <div class="rank-cargo">${p.cargo} · ${p.total} clientes</div>
+        </div>
+        <div class="rank-bars">
+          <div class="rank-bar-row">
+            <div class="rank-bar-lbl">Concluídos</div>
+            <div class="rank-bar-t"><div class="rank-bar-f" style="width:${p.concluidos/maxConc*100}%;background:var(--done)"></div></div>
+          </div>
+          <div class="rank-bar-row">
+            <div class="rank-bar-lbl">Pendências</div>
+            <div class="rank-bar-t"><div class="rank-bar-f" style="width:${p.pendencias/Math.max(1,maxPend)*100}%;background:var(--pend)"></div></div>
+          </div>
+        </div>
+        <div class="rank-nums">
+          <div class="rank-num"><div class="rank-num-v" style="color:${slaColor}">${p.sla}%</div><div class="rank-num-l">SLA</div></div>
+          <div class="rank-num"><div class="rank-num-v" style="color:var(--done)">${p.concluidos}</div><div class="rank-num-l">Feitos</div></div>
+          <div class="rank-num"><div class="rank-num-v" style="color:var(--pend)">${p.pendencias}</div><div class="rank-num-l">Pendentes</div></div>
+        </div>
+        ${i<3?`<div class="rank-medal">${medals[i]}</div>`:'<div style="width:26px"></div>'}
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- Distribuição por grupo por colaborador -->
+  <div style="background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:14px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;margin-bottom:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">📦 Distribuição de Carteira por Colaborador</div>
+    ${prodData.map(p=>{
+      const cs=DB.companies.filter(c=>c.ativo&&c.resp===p.nome);
+      const total=cs.length;if(!total)return'';
+      const go=cs.filter(c=>c.grp==='GO').length;
+      const ops=cs.filter(c=>c.grp==='OPS').length;
+      const g3=cs.filter(c=>c.grp==='G3').length;
+      const sc=cs.filter(c=>c.grp==='SC').length;
+      return`<div class="br" style="margin-bottom:10px;align-items:center">
+        <div style="font-size:11px;font-weight:600;width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${p.nome.split(' ')[0]}</div>
+        <div style="flex:1;height:16px;display:flex;border-radius:4px;overflow:hidden;gap:1px">
+          ${go?`<div style="flex:${go};background:rgba(59,130,246,.6);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff">${go>1?go:''}</div>`:''}
+          ${ops?`<div style="flex:${ops};background:rgba(147,51,234,.6);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff">${ops>1?ops:''}</div>`:''}
+          ${g3?`<div style="flex:${g3};background:rgba(239,68,68,.6);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff">${g3>1?g3:''}</div>`:''}
+          ${sc?`<div style="flex:${sc};background:rgba(212,175,55,.6);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#1a1a1a">${sc>1?sc:''}</div>`:''}
+        </div>
+        <div style="font-size:10px;font-weight:700;min-width:28px;text-align:right;color:var(--ac)">${total}</div>
+        <div style="display:flex;gap:3px;margin-left:8px">
+          ${go?`<span class="gb bgo">${go} GO</span>`:''}
+          ${ops?`<span class="gb bops">${ops} OPS</span>`:''}
+          ${g3?`<span class="gb bg3">${g3} G3</span>`:''}
+          ${sc?`<span class="gb bsc">${sc} SC</span>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderEmpresasCrud(){
+  const active=DB.companies.filter(c=>c.ativo);
+  const resps=DB.getResps();
+  return`<div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700">Empresas Cadastradas</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">${active.length} empresas ativas na base</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAdd()">+ Nova Empresa</button>
+    </div>
+    ${resps.map(resp=>{
+      const cs=active.filter(c=>c.resp===resp);
+      const colab=DB.colaboradores.find(x=>x.nome===resp);
+      const cor=colab?.cor||'var(--ac)';
+      return`<div style="background:var(--s1);border:1px solid var(--s3);border-radius:8px;margin-bottom:10px;overflow:hidden">
+        <div style="padding:9px 14px;border-bottom:1px solid var(--s3);display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:3px;height:20px;background:${cor};border-radius:2px;flex-shrink:0"></div>
+            <span style="font-size:13px;font-weight:700">${resp}</span>
+            <span style="background:${cor}22;color:${cor};font-size:10px;padding:1px 7px;border-radius:8px;font-weight:600">${cs.length} empresas</span>
+            ${colab?`<span style="font-size:9px;color:var(--mu)">${colab.cargo}</span>`:''}
+          </div>
+          <div style="display:flex;gap:4px;font-size:9px;color:var(--mu)">
+            ${Object.entries(GROUPS).map(([k])=>{const n=cs.filter(c=>c.grp===k).length;return n?`<span style="background:var(--s1);border:1px solid var(--s3);padding:1px 6px;border-radius:3px">${n} ${k}</span>`:''}).join('')}
+          </div>
+        </div>
+        <div style="overflow-x:auto"><table style="min-width:500px">
+          <thead><tr>
+            <th style="width:240px;cursor:default">Empresa</th>
+            <th style="width:130px;cursor:default">CNPJ</th>
+            <th style="width:65px;cursor:default">Grupo</th>
+            <th style="width:78px;cursor:default">Regime</th>
+            <th style="width:115px;cursor:default">Responsável <span style="font-size:8px;color:var(--ac)">✎</span></th>
+            <th style="width:80px;text-align:center;cursor:default">Ações</th>
+          </tr></thead>
+          <tbody>
+            ${cs.length===0?`<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--mu)">Sem empresas</td></tr>`:''}
+            ${cs.map(c=>`<tr>
+              <td><div style="font-size:11px;font-weight:500;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${c.name}">${c.grp==='SC'?'★ ':''}<strong>${c.name}</strong></div></td>
+              <td><span class="cnpj">${c.cnpj}</span></td>
+              <td><span class="gb ${gbcls(c.grp)}">${c.grp==='SC'?'SCUD':c.grp}</span></td>
+              <td><span class="rb ${rbcls(c.reg)}">${c.reg}</span></td>
+              <td>${renderRespSel(c)}</td>
+              <td style="text-align:center">
+                <button class="btn" style="font-size:10px;padding:3px 7px;margin-right:3px" onclick="openEdit(${c.id})">✎</button>
+                <button class="btn btn-danger" style="font-size:10px;padding:3px 7px" onclick="openDelete(${c.id})">✕</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderColaboradores(){
+  const colabs=DB.colaboradores.filter(c=>c.ativo);
+  const active=DB.companies.filter(c=>c.ativo);
+  return`<div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:13px;font-weight:700">Colaboradores do Departamento Fiscal</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">Gerencie nomes, cargos e atribuições</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddColab()">+ Novo Colaborador</button>
+    </div>
+    <div class="colabs-grid" style="grid-template-columns:repeat(${Math.min(colabs.length+1,4)},1fr)">
+      ${colabs.map((c,i)=>{
+        const cs=active.filter(x=>x.resp===c.nome);
+        const go=cs.filter(x=>x.grp==='GO').length;
+        const ops=cs.filter(x=>x.grp==='OPS').length;
+        const g3=cs.filter(x=>x.grp==='G3').length;
+        const sc=cs.filter(x=>x.grp==='SC').length;
+        const initial=c.nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        return`<div class="colab-card" style="border-top:3px solid ${c.cor}">
+          <div class="colab-avatar" style="background:${c.cor}22;color:${c.cor}">${initial}</div>
+          <div class="colab-name">${c.nome}</div>
+          <div class="colab-cargo">${c.cargo}</div>
+          <div class="colab-stats">
+            <span class="colab-stat">${cs.length} clientes</span>
+            ${go?`<span class="colab-stat">${go} GO</span>`:''}
+            ${ops?`<span class="colab-stat">${ops} OPS</span>`:''}
+            ${g3?`<span class="colab-stat">${g3} G3</span>`:''}
+            ${sc?`<span class="colab-stat">${sc} SC</span>`:''}
+          </div>
+          <div class="colab-actions">
+            <button class="btn btn-warn" style="font-size:10px;padding:4px 10px;flex:1" onclick="openEditColab(${c.id})">✎ Editar</button>
+            <button class="btn btn-danger" style="font-size:10px;padding:4px 10px" onclick="openDeleteColab(${c.id})">✕</button>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="add-colab-card" onclick="openAddColab()">
+        <div class="add-colab-icon">＋</div>
+        <div class="add-colab-lbl">Novo Colaborador</div>
+        <div style="font-size:9px;margin-top:3px;text-align:center">Assistente ou<br>Analista Fiscal</div>
+      </div>
+    </div>
+
+    <!-- Tabela resumo -->
+    <div style="background:var(--s1);border:1px solid var(--s3);border-radius:8px;overflow:hidden">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--s3);background:var(--s2);font-size:11px;font-weight:600;color:var(--mu)">RESUMO POR COLABORADOR</div>
+      <table style="min-width:400px">
+        <thead><tr>
+          <th style="cursor:default;width:160px">Nome</th>
+          <th style="cursor:default;width:120px">Cargo</th>
+          <th style="cursor:default;width:70px;text-align:center">Clientes</th>
+          <th style="cursor:default">Distribuição por Grupo</th>
+          <th style="cursor:default;width:90px;text-align:center">Ações</th>
+        </tr></thead>
+        <tbody>
+          ${colabs.map(c=>{
+            const cs=active.filter(x=>x.resp===c.nome);
+            const go=cs.filter(x=>x.grp==='GO').length;
+            const ops=cs.filter(x=>x.grp==='OPS').length;
+            const g3=cs.filter(x=>x.grp==='G3').length;
+            const sc=cs.filter(x=>x.grp==='SC').length;
+            return`<tr>
+              <td><span style="font-weight:600;color:${c.cor}">${c.nome}</span></td>
+              <td><span style="font-size:10px;background:var(--s2);border:1px solid var(--s3);padding:2px 7px;border-radius:3px">${c.cargo}</span></td>
+              <td style="text-align:center;font-weight:700;color:var(--ac)">${cs.length}</td>
+              <td>
+                <div style="display:flex;gap:3px;flex-wrap:wrap">
+                  ${go?`<span class="gb bgo">${go} GO</span>`:''}
+                  ${ops?`<span class="gb bops">${ops} OPS</span>`:''}
+                  ${g3?`<span class="gb bg3">${g3} G3</span>`:''}
+                  ${sc?`<span class="gb bsc">${sc} SC</span>`:''}
+                  ${!go&&!ops&&!g3&&!sc?'<span style="color:var(--mu);font-size:10px">—</span>':''}
+                </div>
+              </td>
+              <td style="text-align:center">
+                <button class="btn btn-warn" style="font-size:10px;padding:3px 8px;margin-right:3px" onclick="openEditColab(${c.id})">✎ Editar</button>
+                <button class="btn btn-danger" style="font-size:10px;padding:3px 7px" onclick="openDeleteColab(${c.id})">✕</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderCalendar(){
+  const{y,m}=S.vm;
+  const first=firstDow(y,m);const total=daysInMonth(y,m);
+  const cells=[];for(let i=0;i<first;i++)cells.push(null);for(let d=1;d<=total;d++)cells.push(d);
+  const isCM=(y===TODAY.y&&m===TODAY.m);
+  return`<div class="cw"><div class="cg">
+    ${DAYS.map(d=>`<div class="dh">${d}</div>`).join('')}
+    ${cells.map(day=>{
+      if(!day)return'<div class="dc emp"></div>';
+      const we=isWE(y,m,day);const isT=isCM&&day===TODAY.d;const isSel=day===S.selDay;
+      const comps=dayComps(day);const tot=comps.length;
+      const done=comps.filter(c=>getSt(c.id)==='Concluído').length;
+      const pend=comps.filter(c=>getSt(c.id)==='Pendência').length;
+      const anda=comps.filter(c=>getSt(c.id)==='Em Andamento').length;
+      const prog=comps.filter(c=>getSt(c.id)==='Programado').length;
+      const goC=comps.filter(c=>c.grp==='GO').length;const opsC=comps.filter(c=>c.grp==='OPS').length;
+      const g3C=comps.filter(c=>c.grp==='G3').length;const scC=comps.filter(c=>c.grp==='SC').length;
+      return`<div class="dc${isSel?' sel':''}${isT?' tod':''}${we?' we':''}" onclick="${we?'':'selDay('+day+')'}">
+        <div class="dn"><span>${day}</span>${isT?'<span style="width:5px;height:5px;border-radius:50%;background:var(--go);display:inline-block"></span>':''}${we?'<span style="font-size:8px;color:var(--mu)">FDS</span>':''}</div>
+        ${!we&&tot>0?`<div class="dch">
+          ${goC?`<span class="chip cgo2">${goC}GO</span>`:''}${opsC?`<span class="chip cops2">${opsC}OP</span>`:''}
+          ${g3C?`<span class="chip cg32">${g3C}G3</span>`:''}${scC?`<span class="chip csc2">${scC}SC</span>`:''}
+        </div><div class="dsb">
+          ${done?`<div class="dd" style="flex:${done}"></div>`:''}${anda?`<div class="da" style="flex:${anda}"></div>`:''}
+          ${pend?`<div class="dp" style="flex:${pend}"></div>`:''}${prog?`<div class="dr" style="flex:${prog}"></div>`:''}
+        </div>`:'<div style="font-size:8px;color:var(--mu);opacity:.3;text-align:center;padding-top:8px">—</div>'}
+      </div>`;
+    }).join('')}
+  </div></div>`;
+}
+
+function renderKanban(){
+  const{y,m}=S.vm;const comps=dayComps(S.selDay);const dow=getDow(y,m,S.selDay);
+  const COLS=['Programado','Em Andamento','Pendência','Concluído'];
+  const CLS=['kp','ka','kpnd','kd'];const CC=['var(--prog)','var(--and_)','var(--pend)','var(--done)'];
+  return`<div class="kbw">
+    <div class="kbh">
+      <div class="kbt">Kanban <span class="kbdate">${String(S.selDay).padStart(2,'0')} ${DAYS[dow]} · ${MONTHS[m-1]} ${y}</span>
+        <span style="font-size:11px;color:var(--mu);margin-left:8px">${comps.length} empresa${comps.length!==1?'s':''}</span>
+      </div>
+      <button class="btn" onclick="S.tab='clients';render()">← Clientes</button>
+    </div>
+    ${comps.length===0?'<div style="background:var(--s1);border:1px solid var(--s3);border-radius:8px;padding:24px;text-align:center;color:var(--mu)">Nenhuma empresa agendada.<br><span style="font-size:11px">Acesse <strong>Clientes</strong> e selecione uma data.</span></div>':''}
+    <div class="kbc">
+      ${COLS.map((col,i)=>{
+        const cards=comps.filter(c=>getSt(c.id)===col);
+        return`<div class="kboard ${CLS[i]}">
+          <div class="kbhd"><span style="color:${CC[i]}">${col}</span><span class="kcnt">${cards.length}</span></div>
+          <div class="kby${S.dragOver===col?' dov':''}"
+            ondragover="event.preventDefault();S.dragOver='${col}';render();"
+            ondrop="event.preventDefault();if(S.dragCard)move(S.dragCard,'${col}');">
+            ${cards.length===0?'<div style="text-align:center;color:var(--mu);font-size:10px;padding:16px 0;opacity:.4">Vazio</div>':''}
+            ${cards.map(c=>{
+              const st=getSt(c.id);const isSC=c.grp==='SC';
+              const cor=getColabColor(c.resp);
+              return`<div class="card ${gcardcls(c.grp)}${st==='Pendência'?' cpe':st==='Concluído'?' cdo':''}${isSC?' iscsc':''}"
+                draggable="true" ondragstart="S.dragCard=${c.id}" ondragend="S.dragCard=null;S.dragOver=null;render()">
+                ${isSC?'<div class="scstar">★ SCUD</div>':''}
+                <div class="cname">${c.name}</div>
+                <div class="cmeta">
+                  <span class="gb ${gbcls(c.grp)}">${c.grp==='SC'?'SCUD':c.grp}</span>
+                  <span class="rb ${rbcls(c.reg)}">${c.reg}</span>
+                  <span style="font-size:10px;color:${cor};font-weight:600">${c.resp.split(' ')[0]}</span>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+/* ── MODALS ── */
+function renderModal(){
+  if(!S.modal)return'';
+  const t=S.modal.type;
+
+  if(t==='add'||t==='edit'){
+    const isEdit=t==='edit';const f=S.form;const e=S.formErr;
+    const resps=DB.getResps();
+    return`<div class="mbg" onclick="if(event.target===this){S.modal=null;render();}">
+      <div class="modal wide">
+        <h3>${isEdit?'✎ Editar Empresa':'+ Nova Empresa'}</h3>
+        <div class="modal-sub">${isEdit?'Altere os campos desejados e salve':'Preencha os dados da nova empresa'}</div>
+        <div class="mgrid">
+          <div class="mf" style="grid-column:1/-1">
+            <label>Razão Social / Nome *</label>
+            <input type="text" value="${f.name||''}" oninput="S.form.name=this.value;S.formErr.name='';render()" placeholder="Ex: EMPRESA XYZ LTDA" class="${e.name?'err':''}">
+            ${e.name?`<span class="errtxt">${e.name}</span>`:''}
+          </div>
+          <div class="mf">
+            <label>CNPJ *</label>
+            <input type="text" value="${f.cnpj||''}" oninput="S.form.cnpj=this.value;S.formErr.cnpj='';render()" placeholder="00.000.000/0001-00" class="${e.cnpj?'err':''}">
+            ${e.cnpj?`<span class="errtxt">${e.cnpj}</span>`:''}
+          </div>
+          <div class="mf">
+            <label>Responsável *</label>
+            <select onchange="S.form.resp=this.value" class="${e.resp?'err':''}">
+              ${resps.map(r=>`<option value="${r}"${f.resp===r?' selected':''}>${r}</option>`).join('')}
+            </select>
+            ${e.resp?`<span class="errtxt">${e.resp}</span>`:''}
+          </div>
+          <div class="mf">
+            <label>Grupo</label>
+            <select onchange="S.form.grp=this.value">
+              ${GRP_OPTS.map(k=>`<option value="${k}"${f.grp===k?' selected':''}>${GROUPS[k]||k}</option>`).join('')}
+            </select>
+          </div>
+          <div class="mf">
+            <label>Regime Tributário</label>
+            <select onchange="S.form.reg=this.value">
+              ${REG_OPTS.map(k=>`<option value="${k}"${f.reg===k?' selected':''}>${REGIMES[k]||k}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="mbtns">
+          <button class="mc" onclick="S.modal=null;render()">Cancelar</button>
+          <button class="mok" onclick="${isEdit?'confirmEdit()':'confirmAdd()'}">
+            ${isEdit?'💾 Salvar':'✓ Adicionar'}
+          </button>
+        </div>
+      </div></div>`;
+  }
+
+  if(t==='delete'){
+    const c=DB.companies.find(x=>x.id===S.modal.data.id);
+    return`<div class="mbg" onclick="if(event.target===this){S.modal=null;render();}">
+      <div class="confirm-box">
+        <h3>⚠️ Remover empresa</h3>
+        <p>Tem certeza que deseja remover <strong>${c?.name||''}</strong>?<br><br>Todos os agendamentos desta empresa também serão removidos. Esta ação não pode ser desfeita.</p>
+        <div class="mbtns">
+          <button class="mc" onclick="S.modal=null;render()">Cancelar</button>
+          <button class="mdel" onclick="confirmDelete()">Confirmar Remoção</button>
+        </div>
+      </div></div>`;
+  }
+
+  if(t==='pend'){
+    const c=DB.companies.find(x=>x.id===S.modal.data.id);
+    return`<div class="mbg" onclick="if(event.target===this){S.modal=null;render();}">
+      <div class="modal">
+        <h3>⚠️ Registrar Pendência</h3>
+        <div class="modal-sub">${c?.name||''}</div>
+        <div class="mf">
+          <label>Motivo da pendência *</label>
+          <textarea id="prtxt" rows="3" placeholder="Descreva o motivo..."></textarea>
+        </div>
+        <div class="mbtns">
+          <button class="mc" onclick="S.modal=null;render()">Cancelar</button>
+          <button class="mdel" onclick="cpend()">Confirmar</button>
+        </div>
+      </div></div>`;
+  }
+
+  if(t==='addColab'||t==='editColab'){
+    const isEdit=t==='editColab';const f=S.form;const e=S.formErr;
+    const colab=isEdit?DB.colaboradores.find(x=>x.id===S.modal.data.id):null;
+    return`<div class="mbg" onclick="if(event.target===this){S.modal=null;render();}">
+      <div class="modal">
+        <h3>${isEdit?'✎ Editar Colaborador':'+ Novo Colaborador'}</h3>
+        <div class="modal-sub">${isEdit?'Altere nome ou cargo do colaborador':'Preencha as informações básicas'}</div>
+        <div class="mf">
+          <label>Nome completo *</label>
+          <input type="text" value="${f.nome||''}" oninput="S.form.nome=this.value;S.formErr.nome='';render()" placeholder="Ex: Ana Paula Silva" class="${e.nome?'err':''}">
+          ${e.nome?`<span class="errtxt">${e.nome}</span>`:''}
+        </div>
+        <div class="mf">
+          <label>Cargo</label>
+          <select onchange="S.form.cargo=this.value">
+            ${CARGOS.map(c=>`<option value="${c}"${f.cargo===c?' selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mf">
+          <label>Cor de identificação</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            ${COLAB_COLORS.map(cor=>`<div onclick="S.form.cor='${cor}';render()" style="width:28px;height:28px;border-radius:50%;background:${cor};cursor:pointer;border:3px solid ${f.cor===cor?'#fff':'transparent'};transition:.15s" title="${cor}"></div>`).join('')}
+          </div>
+        </div>
+        ${isEdit&&colab?`<div style="background:var(--s2);border-radius:6px;padding:8px 10px;font-size:10px;color:var(--mu);margin-bottom:4px">
+          ⚠️ Se alterar o nome, as empresas atribuídas a <strong>${colab.nome}</strong> serão automaticamente atualizadas para o novo nome.
+        </div>`:''}
+        <div class="mbtns">
+          <button class="mc" onclick="S.modal=null;render()">Cancelar</button>
+          <button class="mok" onclick="${isEdit?'confirmEditColab()':'confirmAddColab()'}">
+            ${isEdit?'💾 Salvar':'✓ Adicionar'}
+          </button>
+        </div>
+      </div></div>`;
+  }
+
+  if(t==='deleteColab'){
+    const c=DB.colaboradores.find(x=>x.id===S.modal.data.id);
+    const nEmpresas=DB.companies.filter(x=>x.resp===c?.nome&&x.ativo).length;
+    const fallback=DB.colaboradores.find(x=>x.id!==S.modal.data.id&&x.ativo);
+    return`<div class="mbg" onclick="if(event.target===this){S.modal=null;render();}">
+      <div class="confirm-box">
+        <h3>⚠️ Remover colaborador</h3>
+        <p>Tem certeza que deseja remover <strong>${c?.nome||''}</strong>?<br><br>
+        ${nEmpresas>0?`As ${nEmpresas} empresa(s) atribuídas a ele(a) serão reatribuídas para <strong>${fallback?.nome||'outro colaborador'}</strong>.<br><br>`:''}
+        Esta ação não pode ser desfeita.</p>
+        <div class="mbtns">
+          <button class="mc" onclick="S.modal=null;render()">Cancelar</button>
+          <button class="mdel" onclick="confirmDeleteColab()">Confirmar Remoção</button>
+        </div>
+      </div></div>`;
+  }
+  return'';
+}
+
+/* ── MAIN RENDER ── */
+function render(){
+  const k=curKey();const assigned=Object.keys(S.assignments[k]||{}).length;
+  const{y,m}=S.vm;const cl=S.dark?'':'lt';
+  const active=DB.companies.filter(c=>c.ativo).length;
+  const resps=DB.getResps();
+  document.getElementById('root').innerHTML=`<div class="${cl}">
+    <div class="hdr">
+      <div class="logo">Fiscal<em>OPS</em></div>
+      <div class="sw"><input type="text" placeholder="Buscar empresa..." value="${S.filter.search}" oninput="setFil('search',this.value)"></div>
+      <select onchange="setFil('resp',this.value)"><option value="">Responsáveis</option>
+        ${resps.map(r=>`<option value="${r}"${S.filter.resp===r?' selected':''}>${r.split(' ')[0]}</option>`).join('')}</select>
+      <select onchange="setFil('grp',this.value)"><option value="">Grupos</option>
+        ${Object.entries(GROUPS).map(([k2,v])=>`<option value="${k2}"${S.filter.grp===k2?' selected':''}>${k2==='SC'?'Scuderia':v}</option>`).join('')}</select>
+      <div class="mnav">
+        <button onclick="navM(-1)">‹</button>
+        <div class="mlbl">${MONTHS[m-1]} ${y}</div>
+        <button onclick="navM(1)">›</button>
+      </div>
+      <button class="btn" onclick="S.dark=!S.dark;render()">${S.dark?'☀️':'🌙'}</button>
+    </div>
+    <div class="tabs">
+      <div class="tab${S.tab==='overview'?' on':''}" onclick="S.tab='overview';render()">👥 Visão Geral</div>
+      <div class="tab${S.tab==='clients'?' on':''}" onclick="S.tab='clients';render()">📋 Clientes <span class="badge">${active}</span></div>
+      <div class="tab${S.tab==='gestao'?' on':''}" onclick="S.tab='gestao';render()">⚙️ Gestão</div>
+      <div class="tab${S.tab==='calendar'?' on':''}" onclick="S.tab='calendar';render()">📅 Calendário <span class="badge">${assigned}</span></div>
+      <div class="tab${S.tab==='kanban'?' on':''}" onclick="S.tab='kanban';render()">⬛ Kanban</div>
+    </div>
+    ${renderKPI()}
+    ${S.tab==='overview'?renderOverview():''}
+    ${S.tab==='clients'?renderClients():''}
+    ${S.tab==='gestao'?renderGestao():''}
+    ${S.tab==='calendar'?renderCalendar():''}
+    ${S.tab==='kanban'?renderKanban():''}
+    ${renderModal()}
+    ${S.notif?`<div class="notif ${S.notif.type}">${S.notif.msg}</div>`:''}
+  </div>`;
+}
+
+window.setFil=(k,v)=>{S.filter={...S.filter,[k]:v};render();};
+window.toggleSort=toggleSort;
+window.navM=dir=>{let{y,m}=S.vm;m+=dir;if(m>12){m=1;y++;}if(m<1){m=12;y--;}S.vm={y,m};render();};
+window.doAsgn=(id,val)=>{setAsgn(id,val?parseInt(val):null);render();};
+window.selDay=d=>{S.selDay=d;S.tab='kanban';render();};
+window.changeResp=changeResp;
+window.openAdd=openAdd;window.openEdit=openEdit;window.openDelete=openDelete;
+window.confirmAdd=confirmAdd;window.confirmEdit=confirmEdit;window.confirmDelete=confirmDelete;
+window.openAddColab=openAddColab;window.openEditColab=openEditColab;window.openDeleteColab=openDeleteColab;
+window.confirmAddColab=confirmAddColab;window.confirmEditColab=confirmEditColab;window.confirmDeleteColab=confirmDeleteColab;
+window.cpend=()=>{
+  const r=document.getElementById('prtxt')?.value||'';
+  if(!r.trim()){alert('Informe o motivo');return;}
+  doMove(S.modal.data.id,'Pendência');
+};
+
+render();
+</script>
+</body>
+</html>
