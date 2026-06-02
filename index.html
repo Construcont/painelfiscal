@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -522,7 +522,14 @@ function setAsgn(id,day){
 }
 function getSt(id){return(S.statuses[curKey()]||{})[id]||'Programado';}
 function setSt(id,st){const k=curKey();if(!S.statuses[k])S.statuses[k]={};S.statuses[k][id]=st;}
-function dayComps(day){const a=S.assignments[curKey()]||{};return DB.companies.filter(c=>c.ativo&&a[c.id]===day);}
+function dayComps(day){
+  const a=S.assignments[curKey()]||{};
+  return DB.companies.filter(c=>{
+    if(!c.ativo||a[c.id]!==day)return false;
+    if(S.filter.resp&&c.resp!==S.filter.resp)return false;
+    return true;
+  });
+}
 
 function notify(msg,type='info'){
   clearTimeout(S.notifTimer);S.notif={msg,type};render();
@@ -1076,15 +1083,16 @@ function renderKanban(){
         const cards=comps.filter(c=>getSt(c.id)===col);
         return`<div class="kboard ${CLS[i]}">
           <div class="kbhd"><span style="color:${CC[i]}">${col}</span><span class="kcnt">${cards.length}</span></div>
-          <div class="kby${S.dragOver===col?' dov':''}"
-            ondragover="event.preventDefault();S.dragOver='${col}';render();"
-            ondrop="event.preventDefault();if(S.dragCard)move(S.dragCard,'${col}');">
+          <div class="kby" data-col="${col}"
+            ondragover="event.preventDefault();kbDragOver(this,'${col}');"
+            ondragleave="kbDragLeave(this);"
+            ondrop="event.preventDefault();kbDrop(this,'${col}');">
             ${cards.length===0?'<div style="text-align:center;color:var(--mu);font-size:10px;padding:16px 0;opacity:.4">Vazio</div>':''}
             ${cards.map(c=>{
               const st=getSt(c.id);const isSC=c.grp==='SC';
               const cor=getColabColor(c.resp);
               return`<div class="card ${gcardcls(c.grp)}${st==='Pendência'?' cpe':st==='Concluído'?' cdo':''}${isSC?' iscsc':''}"
-                draggable="true" ondragstart="S.dragCard=${c.id}" ondragend="S.dragCard=null;S.dragOver=null;render()">
+                draggable="true" ondragstart="S.dragCard=${c.id};document.querySelectorAll('.kby').forEach(e=>e.classList.remove('dov'))" ondragend="S.dragCard=null;S.dragOver=null;document.querySelectorAll('.kby').forEach(e=>e.classList.remove('dov'))">
                 ${isSC?'<div class="scstar">★ SCUD</div>':''}
                 <div class="cname">${c.name}</div>
                 <div class="cmeta">
@@ -1278,6 +1286,17 @@ function render(){
 }
 
 window.setFil=(k,v)=>{S.filter={...S.filter,[k]:v};render();};
+window.kbDragOver=(el,col)=>{
+  document.querySelectorAll('.kby').forEach(e=>e.classList.remove('dov'));
+  el.classList.add('dov');
+  S.dragOver=col;
+};
+window.kbDragLeave=(el)=>{el.classList.remove('dov');};
+window.kbDrop=(el,col)=>{
+  document.querySelectorAll('.kby').forEach(e=>e.classList.remove('dov'));
+  S.dragOver=null;
+  if(S.dragCard)move(S.dragCard,col);
+};
 window.toggleSort=toggleSort;
 window.navM=dir=>{let{y,m}=S.vm;m+=dir;if(m>12){m=1;y++;}if(m<1){m=12;y--;}S.vm={y,m};render();};
 window.doAsgn=(id,val)=>{setAsgn(id,val?parseInt(val):null);render();};
